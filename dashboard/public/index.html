@@ -11,75 +11,143 @@
     />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <span class="logo">◔</span>
-        <h1>tokenmeter</h1>
-        <span class="tagline">local-first LLM usage &amp; cost</span>
-      </div>
-      <div class="controls">
-        <div class="seg" id="window-seg" role="tablist" aria-label="time window">
-          <button data-window="day">Day</button>
-          <button data-window="week">Week</button>
-          <button data-window="month" class="active">Month</button>
-          <button data-window="total">All</button>
+    <div class="app">
+      <!-- ───────────── Sidebar ───────────── -->
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="logo">◔</span>
+          <span class="name">tokenmeter<small>local LLM cost</small></span>
         </div>
-        <span class="privacy" title="No data leaves this machine">🔒 local only</span>
-      </div>
-    </header>
 
-    <main>
-      <section class="cards" id="cards"></section>
+        <div class="nav-label">General</div>
+        <button class="nav-item active" data-target="sec-overview">
+          <span class="ico">📊</span><span class="lbl">Overview</span>
+        </button>
+        <button class="nav-item" data-target="sec-trend">
+          <span class="ico">📈</span><span class="lbl">Trends</span>
+        </button>
+        <button class="nav-item" data-target="sec-providers">
+          <span class="ico">🧩</span><span class="lbl">Providers</span>
+        </button>
+        <button class="nav-item" data-target="sec-detail">
+          <span class="ico">🧾</span><span class="lbl">Activity</span>
+        </button>
 
-      <section class="panel" id="budget-panel" hidden>
-        <h2>Budget</h2>
-        <div class="budget">
-          <div class="budget-bar"><div class="budget-fill" id="budget-fill"></div></div>
-          <div class="budget-label" id="budget-label"></div>
+        <div class="spacer"></div>
+
+        <div class="privacy">
+          <span>🔒</span>
+          <span>local only<small>no data leaves this machine</small></span>
         </div>
-      </section>
+      </aside>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Cost over time</h2>
-          <div class="seg small" id="gran-seg">
-            <button data-gran="day" class="active">Day</button>
-            <button data-gran="week">Week</button>
-            <button data-gran="month">Month</button>
+      <!-- ───────────── Content ───────────── -->
+      <main class="content">
+        <div class="topbar">
+          <div>
+            <h1>Tokens</h1>
+            <div class="sub" id="window-sub">usage &amp; cost overview</div>
+          </div>
+          <div class="topbar-actions">
+            <div class="seg" id="window-seg" role="tablist" aria-label="time window">
+              <button data-window="day">Day</button>
+              <button data-window="week">Week</button>
+              <button data-window="month" class="active">Month</button>
+              <button data-window="total">All</button>
+            </div>
+            <button class="icon-btn" id="refresh" title="Refresh">⟳</button>
           </div>
         </div>
-        <div id="timeseries" class="chart"></div>
-      </section>
 
-      <section class="panel headline">
-        <div class="panel-head">
-          <h2>By feature <span class="hint">where the money goes</span></h2>
-          <div class="seg small" id="by-seg">
-            <button data-by="tag" class="active">Tag</button>
-            <button data-by="model">Model</button>
-            <button data-by="provider">Provider</button>
+        <div class="grid">
+          <!-- Left column -->
+          <div class="col">
+            <section class="panel" id="sec-overview">
+              <div class="panel-head">
+                <h2 class="panel-title">Summary</h2>
+              </div>
+              <div class="stat-grid" id="stat-grid"></div>
+              <div class="meta-row" id="meta-row"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2 class="panel-title">Breakdown</h2>
+                <div class="seg small" id="by-seg">
+                  <button data-by="model" class="active">Model</button>
+                  <button data-by="provider">Provider</button>
+                  <button data-by="tag">Tag</button>
+                </div>
+              </div>
+              <div class="rank" id="rank"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2 class="panel-title">Activity</h2>
+                <span class="sub" id="heat-total" style="color: var(--muted); font-size: 12px"></span>
+              </div>
+              <div class="heatmap">
+                <div class="heat-grid" id="heat-grid"></div>
+                <div class="heat-legend">
+                  <span>Less</span>
+                  <span class="scale" id="heat-scale"></span>
+                  <span>More</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Right column -->
+          <div class="col">
+            <section class="panel hero">
+              <div class="label">Total cost</div>
+              <div class="total" id="hero-total">$0.00</div>
+              <div class="tokens"><span class="dot"></span><span id="hero-tokens">0 tokens</span></div>
+              <div class="stack-bar" id="stack-bar"></div>
+              <div class="stack-legend" id="stack-legend"></div>
+            </section>
+
+            <section class="panel" id="budget-panel" hidden>
+              <div class="panel-head"><h2 class="panel-title">Budget</h2></div>
+              <div class="budget-bar"><div class="budget-fill" id="budget-fill"></div></div>
+              <div class="budget-label" id="budget-label"></div>
+            </section>
+
+            <section id="sec-providers">
+              <div class="provider-grid" id="provider-grid"></div>
+            </section>
+
+            <section class="panel" id="sec-trend">
+              <div class="panel-head">
+                <h2 class="panel-title">Usage trend</h2>
+                <div class="seg small" id="gran-seg">
+                  <button data-gran="day" class="active">Day</button>
+                  <button data-gran="week">Week</button>
+                  <button data-gran="month">Month</button>
+                </div>
+              </div>
+              <div id="trend" class="chart"></div>
+            </section>
+
+            <section class="panel" id="sec-detail">
+              <div class="panel-head">
+                <div class="tabs" id="detail-tabs">
+                  <button class="tab active" data-tab="daily">Daily breakdown</button>
+                  <button class="tab" data-tab="recent">Recent calls</button>
+                </div>
+              </div>
+              <div id="detail-body" class="table-wrap"></div>
+              <div class="pager" id="pager" hidden>
+                <button id="prev" disabled>← Newer</button>
+                <span id="page-label"></span>
+                <button id="next">Older →</button>
+              </div>
+            </section>
           </div>
         </div>
-        <div class="split">
-          <div id="by-chart" class="chart"></div>
-          <div id="by-table" class="table-wrap"></div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Recent calls</h2>
-        <div id="recent" class="table-wrap"></div>
-        <div class="pager">
-          <button id="prev" disabled>← Newer</button>
-          <span id="page-label"></span>
-          <button id="next">Older →</button>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      tokenmeter tracks calls routed through the wrapper — not your provider billing account.
-    </footer>
+      </main>
+    </div>
 
     <script src="/app.js"></script>
   </body>
