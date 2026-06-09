@@ -1,297 +1,174 @@
-# tokenmeter
+# 🎮 tokenmeter playground — how to run it again
 
-**Wrap your LLM client in one line and see exactly what every call costs — by feature, by model, by provider — with a pre-flight budget guard and a local dashboard. Everything stays on your machine.**
-
-> Honest scope: tokenmeter measures the calls **routed through the wrapper**. It does **not** read your provider's billing account. It's a code-level meter, not an invoice reconciler — which is exactly why it can attribute cost to *features* and *block* a call before you spend, things a provider console structurally cannot do.
-
-[![zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)](#zero-dependency-core)
-[![node](https://img.shields.io/badge/node-%E2%89%A518-blue)](#)
-[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+A guide to firing test LLM calls and watching them show up in the dashboard.
+Everything runs locally. You need **two terminals**, both opened at the
+**project root** (`...\tokenmeter`).
 
 ---
 
-## 10-second quickstart
+## TL;DR — the 4 commands
 
-```bash
-npm install tokenmeter
+```powershell
+# one-time: add your keys
+copy playground\.env.example playground\.env      # then paste keys into playground\.env
+
+# terminal 1 — the API hitting portal (generates data)
+node playground\server.mjs                          # → http://127.0.0.1:4000
+
+# terminal 2 — the usage view portal (shows data)
+npx tokenmeter dashboard                            # → http://127.0.0.1:3000
 ```
 
-```ts
-import { withTracking } from "tokenmeter";
-import OpenAI from "openai";
-
-const openai = withTracking(new OpenAI()); // provider auto-detected
-
-await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [{ role: "user", content: "Hello!" }],
-});
-```
-
-```bash
-npx tokenmeter dashboard   # opens http://127.0.0.1:3000 — 100% local
-```
-
-That's it. Every call is now metered to a local store, and the dashboard shows
-cost over time, cost-by-feature, and recent calls.
+Then open **http://127.0.0.1:4000**, click **Run** buttons, and refresh
+**http://127.0.0.1:3000** to watch cost/tokens fill in.
 
 ---
 
-## Why tokenmeter
+## The two portals (don't mix them up)
 
-The provider's console tells you *how much you spent total, yesterday*. It can't
-tell you **which feature** spent it, and it can't **stop** a call before it
-happens. tokenmeter does both:
+| | **API hitting portal** | **Usage view portal** |
+|---|---|---|
+| **What it is** | Buttons that fire real LLM calls | The dashboard that displays results |
+| **URL** | http://127.0.0.1:4000 | http://127.0.0.1:3000 |
+| **Started by** | `node playground\server.mjs` | `npx tokenmeter dashboard` |
+| **Has buttons?** | ✅ yes — click to generate data | ❌ no — read-only charts |
 
-### 1. Per-feature cost attribution
-
-Tag calls by what they're *for*, then see where the money actually goes:
-
-```ts
-const summarizer = openai.withTag("summarize");
-await summarizer.chat.completions.create({ model: "gpt-4o-mini", messages });
-
-const translator = openai.withTag("translate");
-await translator.chat.completions.create({ model: "gpt-4o", messages });
-```
-
-The dashboard's headline **"By feature"** view answers *"what is `summarize`
-costing me this month?"* — a question your OpenAI/Anthropic dashboard cannot.
-
-### 2. Pre-flight budget guard
-
-Set a spend limit in code. tokenmeter checks it **before the request is sent**
-and throws a typed, catchable error in `block` mode:
-
-```ts
-import { configure, BudgetExceededError } from "tokenmeter";
-
-configure({
-  budget: {
-    limit: 50,            // USD
-    window: "month",      // "day" | "week" | "month" | "total"
-    mode: "block",        // "block" -> throw before the call; "warn" -> log only
-    perTag: { summarize: 10 },   // optional per-feature sub-budgets
-  },
-});
-
-try {
-  await openai.chat.completions.create({ model: "gpt-4o", messages });
-} catch (err) {
-  if (err instanceof BudgetExceededError) {
-    // handle gracefully — the request was never sent
-  }
-}
-```
+They share the same store file (`.tokenmeter\usage.db`), so anything you fire
+on **:4000** appears on **:3000** after a refresh.
 
 ---
 
-## Supported providers
+## Step 1 — Add your API keys (one-time)
 
-| Provider | `provider` slug | Detection | Notes |
-| --- | --- | --- | --- |
-| OpenAI | `openai` | auto | Chat Completions + Responses API |
-| Anthropic | `anthropic` | auto | Messages API + streaming |
-| Google Gemini | `gemini` | auto | `@google/genai` and legacy SDK |
-| **Any OpenAI-compatible** | `openai-compatible` | explicit | see below |
-
-The single `openai-compatible` adapter covers **Groq, Together, Fireworks,
-OpenRouter, Perplexity, DeepInfra, Hyperbolic, Novita, SiliconFlow, Cerebras,
-NVIDIA NIM**, and local servers (**Ollama / LM Studio / vLLM**):
-
-```ts
-import OpenAI from "openai";
-const groq = withTracking(
-  new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY }),
-  { provider: "openai-compatible", providerLabel: "groq" },
-);
+```powershell
+copy playground\.env.example playground\.env
+notepad playground\.env
 ```
 
-`providerLabel` is used for display and for pricing lookup — add your rates with
-`configure({ pricing: { groq: { "llama-3.3-70b": { inputPer1M: 0.59, outputPer1M: 0.79 } } } })`.
+Paste one or both keys (either provider works on its own):
+
+```
+GROQ_API_KEY=gsk_xxxxxxxxxxxx
+GEMINI_API_KEY=AIzaxxxxxxxxxxxx
+```
+
+- Groq keys: https://console.groq.com/keys
+- Gemini keys: https://aistudio.google.com/apikey
+
+> `playground\.env` is gitignored — your keys won't be committed.
 
 ---
 
-## Streaming
+## Step 2 — Start the API hitting portal (terminal 1)
 
-Streaming works transparently. tokenmeter accumulates the stream to recover
-usage; if the provider omits usage on a stream, it falls back to local token
-estimation and flags the record `estimated: true`.
+From the project root:
 
-```ts
-const stream = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages,
-  stream: true,
-  stream_options: { include_usage: true }, // recommended for exact OpenAI usage
-});
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
-}
-// record is written automatically when the stream completes
+```powershell
+node playground\server.mjs
 ```
+
+You'll see:
+
+```
+  tokenmeter playground → http://127.0.0.1:4000
+  store: ...\tokenmeter\.tokenmeter\usage.db
+  keys:  groq=set  gemini=set
+```
+
+Open **http://127.0.0.1:4000** in your browser. Leave this terminal running.
 
 ---
 
-## CLI
+## Step 3 — Hit the endpoints
 
-The CLI wraps the same functions the library exports, so everything is scriptable.
+**Easiest — click buttons** on http://127.0.0.1:4000:
 
-```bash
-tokenmeter dashboard [--port 3000] [--db <path>] [--no-open]
-tokenmeter report   [--window day|week|month|total] [--by tag|model|provider]
-tokenmeter export   [--format csv|json] [--out <file>]
-tokenmeter reset    [--yes]
+- Each card has a **Run** button → fires **one** real LLM call of that size.
+- **⚡ Burst (8 random calls)** → fires 8 calls at once to fill the dashboard fast.
+- Results appear instantly in the table at the bottom (tokens in/out, latency, preview).
+
+**Or hit the endpoints directly** (PowerShell):
+
+```powershell
+# one call
+curl.exe -X POST "http://127.0.0.1:4000/api/run?id=groq-classify-tiny"
+
+# 8 calls at once
+curl.exe -X POST "http://127.0.0.1:4000/api/burst?n=8"
 ```
 
-`tokenmeter report` prints a summary table — handy in CI or a quick terminal check:
+### Available endpoints (on :4000)
 
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET`  | `/`                        | The button page |
+| `GET`  | `/api/scenarios`           | List scenario ids + which keys are set |
+| `POST` | `/api/run?id=<scenario>`   | Fire **one** call |
+| `POST` | `/api/burst?n=8`           | Fire N calls (1–20) |
+
+### Scenario ids (the `id=` values) — varied provider / model / tag / token size
+
+| id | provider | model | tag | size |
+|---|---|---|---|---|
+| `groq-classify-tiny`      | groq   | llama-3.1-8b-instant     | classify  | tiny |
+| `groq-summarize-small`    | groq   | llama-3.1-8b-instant     | summarize | small |
+| `groq-draft-medium`       | groq   | llama-3.3-70b-versatile  | draft     | medium |
+| `groq-codegen-large`      | groq   | llama-3.3-70b-versatile  | codegen   | large |
+| `gemini-classify-tiny`    | gemini | gemini-2.5-flash-lite    | classify  | tiny |
+| `gemini-translate-small`  | gemini | gemini-2.5-flash-lite    | translate | small |
+| `gemini-summarize-medium` | gemini | gemini-2.5-flash         | summarize | medium |
+| `gemini-chat-large`       | gemini | gemini-2.5-flash         | chat      | large |
+
+---
+
+## Step 4 — Watch the usage view portal (terminal 2)
+
+In a **second terminal**, also at the project root:
+
+```powershell
+npx tokenmeter dashboard
 ```
-tokenmeter — usage report (month)
 
-Metric           Value
----------------  --------
-Total cost       $1.2841
-Calls            312
-Input tokens     1,204,553
-Output tokens    98,210
-Avg latency      842 ms
-Estimated share  4%
+Opens **http://127.0.0.1:3000**. After clicking buttons on :4000, **refresh**
+this page. You'll see:
 
-By tag:
+- **Total cost / tokens / latency / estimated** cards
+- **Cost over time** (Day / Week / Month)
+- **By feature** — switchable between **Tag / Model / Provider**
 
-tag        calls  in        out      cost     avg ms
----------  -----  --------  -------  -------  ------
-summarize  210    980,000   60,000   $0.9120  910
-translate  102    224,553   38,210   $0.3721  701
+> Tip: the dashboard defaults to the **Day** window. If you don't see data,
+> click **All** in the top-right.
+
+---
+
+## Resetting the data
+
+To wipe all recorded usage and start fresh:
+
+```powershell
+npx tokenmeter reset --yes
 ```
 
 ---
 
-## Privacy & security
+## Troubleshooting
 
-- **Local-first / zero exfiltration.** There is no hosted backend. No usage
-  data, prompts, or API keys ever leave your machine. The dashboard binds to
-  `127.0.0.1` only.
-- **Never touches credentials.** tokenmeter reads provider keys exactly the way
-  the official SDKs do (it doesn't — it just wraps the client you already made).
-  It never prompts for, stores, transmits, or logs an API key.
-- **No prompt storage by default.** Only token counts + metadata are recorded
-  (`redactPrompts: true`). There is no opt-in text capture; your prompts and
-  completions are never written to the store.
+| Symptom | Fix |
+|---|---|
+| Buttons greyed out / `"...API_KEY is not set"` | Add the key to `playground\.env`, restart terminal 1 |
+| Dashboard empty after firing calls | Click **All** in the dashboard top-right; or refresh the page |
+| `Cannot find module '../dist/index.js'` | Run `pnpm build` first (rebuilds `dist/`) |
+| `:4000` won't start (`EADDRINUSE`) | Another instance is running, or set a port: `$env:PORT=4100; node playground\server.mjs` |
+| Groq `400 model_decommissioned` | Groq retired a model — update the `model` in `playground\server.mjs` |
 
 ---
 
-## Zero-dependency core
+## How it works (one paragraph)
 
-The import you ship to production — `tokenmeter` — has **zero runtime
-dependencies**. The CLI and dashboard are built from Node built-ins (`node:http`,
-`node:sqlite`) only. Nothing to audit, nothing to bloat your bundle.
-
-Storage uses Node's built-in `node:sqlite` when available (Node ≥ 22.5, or run
-with `--experimental-sqlite` on Node 22), and transparently falls back to a
-JSON-lines file otherwise — so it works on Node 18/20 too.
-
----
-
-## Configuration reference
-
-```ts
-import { configure } from "tokenmeter";
-
-configure({
-  store: "auto",            // "sqlite" | "json" | "auto" | <your Store>  (default "auto")
-  dbPath: "./.tokenmeter/usage.db",  // store file location
-  pricing: { /* provider -> model -> { inputPer1M, outputPer1M } */ },
-  budget: { limit: 50, window: "month", mode: "block", perTag: { summarize: 10 } },
-  redactPrompts: true,      // never store prompt text (default true)
-  enabled: true,            // global kill-switch — set false in tests (default true)
-});
-```
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `store` | `"auto"` | Backend. `auto` prefers SQLite, falls back to JSON. |
-| `dbPath` | `./.tokenmeter/usage.{db,jsonl}` | Where records are written. |
-| `pricing` | bundled table | Merged over the built-in rates; add/patch models. |
-| `budget` | _none_ | Pre-flight spend guard (see above). |
-| `redactPrompts` | `true` | Keep prompt/completion text out of the store. |
-| `enabled` | `true` | When `false`, calls pass through completely untracked. |
-
-### `withTracking(client, options?)`
-
-```ts
-withTracking(client, {
-  tag: "default",          // default tag for all calls through this wrapper
-  provider: "anthropic",   // optional; auto-detected if omitted
-  providerLabel: "groq",   // display/pricing label for openai-compatible
-});
-```
-
-The returned value is a transparent `Proxy` of your client — every method,
-type, and streaming behavior is preserved, including private SDK state.
-
----
-
-## Contributing an adapter
-
-Adding a provider is one file plus one registration. An adapter answers two
-questions: *is this my client?* and *where is the usage on a response?*
-
-```ts
-import { registerAdapter, type Adapter } from "tokenmeter";
-
-const myAdapter: Adapter = {
-  name: "myprovider",
-  detect(client) {
-    return (client as any)?.constructor?.name === "MyProviderSDK";
-  },
-  extractUsage(response) {
-    const u = (response as any)?.usage;
-    if (!u) return null; // null -> tokenmeter will estimate
-    return {
-      model: (response as any).model,
-      inputTokens: u.input_tokens,
-      outputTokens: u.output_tokens,
-    };
-  },
-  // optional: accumulate usage across streamed chunks
-  // extractStreamUsage(chunk, acc) { ... },
-};
-
-registerAdapter(myAdapter);
-```
-
-PRs that add native adapters or update `src/pricing/prices.json` are very
-welcome. Pricing changes frequently — keeping the table current is the most
-useful contribution.
-
----
-
-## API exports
-
-```ts
-import {
-  withTracking,
-  configure,
-  getStore,
-  cost, findPrice, getPricingTable,
-  estimate,
-  checkBudget, windowStart,
-  registerAdapter, getAdapter, listAdapters,
-  BudgetExceededError, AdapterNotFoundError,
-} from "tokenmeter";
-
-import type {
-  UsageRecord, Store, PricingTable, ModelPrice,
-  BudgetConfig, BudgetWindow, BudgetMode,
-  TokenmeterConfig, TrackingOptions,
-  Adapter, ExtractedUsage,
-} from "tokenmeter";
-```
-
----
-
-## License
-
-MIT
+`playground\server.mjs` builds provider clients (Groq over `fetch`, Gemini via
+`@google/genai`), wraps each in `withTracking(...)`, and points tokenmeter at
+`.tokenmeter\usage.db`. Every button click sends `POST /api/run`, which makes a
+real API call through the wrapper — so tokenmeter records the tokens, cost, tag,
+and latency to the store. The dashboard (`npx tokenmeter dashboard`) reads that
+same store and renders it. **Button click (:4000) → real API call → usage.db →
+dashboard (:3000).**
