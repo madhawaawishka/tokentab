@@ -1,0 +1,76 @@
+{
+  "name": "tokenmeter",
+  "version": "0.1.0",
+  "description": "Local-first LLM usage & cost tracker. Wrap your OpenAI/Anthropic/Gemini client in one line to measure tokens, cost, latency and per-feature spend — with a budget guard and a local dashboard. Zero exfiltration, zero runtime deps in the core.",
+  "type": "module",
+  "license": "MIT",
+  "author": "",
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
+  "keywords": [
+    "llm",
+    "openai",
+    "anthropic",
+    "gemini",
+    "tokens",
+    "cost",
+    "budget",
+    "observability",
+    "usage",
+    "tracking",
+    "local-first",
+    "dashboard",
+    "tokenmeter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/tokenmeter.git"
+  },
+  "homepage": "https://github.com/your-org/tokenmeter#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/tokenmeter/issues"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "tokenmeter": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "node --import ./scripts/ts-resolve.mjs --test --experimental-sqlite --disable-warning=ExperimentalWarning \"test/**/*.test.ts\"",
+    "test:ci": "node --import ./scripts/ts-resolve.mjs --test --experimental-sqlite --disable-warning=ExperimentalWarning \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@google/genai": "^2.8.0",
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}

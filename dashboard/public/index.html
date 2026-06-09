@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tokenmeter</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">◔</span>
+        <h1>tokenmeter</h1>
+        <span class="tagline">local-first LLM usage &amp; cost</span>
+      </div>
+      <div class="controls">
+        <div class="seg" id="window-seg" role="tablist" aria-label="time window">
+          <button data-window="day">Day</button>
+          <button data-window="week">Week</button>
+          <button data-window="month" class="active">Month</button>
+          <button data-window="total">All</button>
+        </div>
+        <span class="privacy" title="No data leaves this machine">🔒 local only</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="cards" id="cards"></section>
+
+      <section class="panel" id="budget-panel" hidden>
+        <h2>Budget</h2>
+        <div class="budget">
+          <div class="budget-bar"><div class="budget-fill" id="budget-fill"></div></div>
+          <div class="budget-label" id="budget-label"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Cost over time</h2>
+          <div class="seg small" id="gran-seg">
+            <button data-gran="day" class="active">Day</button>
+            <button data-gran="week">Week</button>
+            <button data-gran="month">Month</button>
+          </div>
+        </div>
+        <div id="timeseries" class="chart"></div>
+      </section>
+
+      <section class="panel headline">
+        <div class="panel-head">
+          <h2>By feature <span class="hint">where the money goes</span></h2>
+          <div class="seg small" id="by-seg">
+            <button data-by="tag" class="active">Tag</button>
+            <button data-by="model">Model</button>
+            <button data-by="provider">Provider</button>
+          </div>
+        </div>
+        <div class="split">
+          <div id="by-chart" class="chart"></div>
+          <div id="by-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Recent calls</h2>
+        <div id="recent" class="table-wrap"></div>
+        <div class="pager">
+          <button id="prev" disabled>← Newer</button>
+          <span id="page-label"></span>
+          <button id="next">Older →</button>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      tokenmeter tracks calls routed through the wrapper — not your provider billing account.
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
