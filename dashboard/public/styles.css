@@ -40,12 +40,13 @@ body {
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
 }
 .brand .logo {
-  font-size: 22px;
-  color: var(--accent);
+  width: 26px;
+  height: 26px;
+  display: block;
 }
 .brand h1 {
   font-size: 18px;

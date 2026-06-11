@@ -1,4 +1,4 @@
-// tokenmeter dashboard — vanilla JS, hand-rolled SVG charts. No external deps.
+// tokentab dashboard — vanilla JS, hand-rolled SVG charts. No external deps.
 const state = {
   window: "month",
   gran: "day",

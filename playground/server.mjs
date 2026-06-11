@@ -323,7 +323,7 @@ const PAGE = /* html */ `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>tokenmeter playground</title>
+<title>tokentab playground</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -358,9 +358,9 @@ const PAGE = /* html */ `<!doctype html>
 </style>
 </head>
 <body>
-  <h1>tokenmeter playground</h1>
+  <h1>tokentab playground</h1>
   <p class="sub">Click a button to fire a real LLM call of a given token size. Then run
-    <code>npx tokenmeter dashboard</code> to watch it land.</p>
+    <code>npx tokentab dashboard</code> to watch it land.</p>
 
   <div class="keys" id="keys"></div>
 

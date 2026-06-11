@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="tt-grad" x1="0" y1="64" x2="64" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60a5fa" />
+      <stop offset="1" stop-color="#6ee7b7" />
+    </linearGradient>
+  </defs>
+  <!-- tab background -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#10141c" />
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="none" stroke="#2a3140" stroke-width="1.5" />
+  <!-- meter track -->
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#6ee7b7" stroke-opacity="0.16" stroke-width="7" />
+  <!-- usage arc (3/4 gauge) -->
+  <path d="M32 14 A18 18 0 1 1 14 32" fill="none" stroke="url(#tt-grad)" stroke-width="7" stroke-linecap="round" />
+  <!-- token -->
+  <circle cx="32" cy="32" r="6.5" fill="#6ee7b7" />
+</svg>

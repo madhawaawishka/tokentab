@@ -152,7 +152,7 @@ export function startDashboard(options: DashboardOptions = {}): Promise<{ close:
     server.listen(port, host, () => {
       const addr = `http://${host}:${port}`;
       console.error(
-        `tokenmeter dashboard running at ${addr}  (local only — no data leaves this machine)`,
+        `tokentab dashboard running at ${addr}  (local only — no data leaves this machine)`,
       );
       console.error("Press Ctrl+C to stop.");
       if (options.open !== false) openBrowser(addr);
