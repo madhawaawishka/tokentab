@@ -1,4 +1,12 @@
-# 🎮 tokenmeter playground — how to run it again
+<p align="center">
+  <img src="https://raw.githubusercontent.com/madhawaawishka/tokentab/main/assets/logo.svg" alt="tokentab" width="96" />
+</p>
+<h1 align="center">tokentab</h1>
+<p align="center"><em>local-first LLM usage &amp; cost</em></p>
+
+---
+
+# 🎮 tokentab playground — how to run it again
 
 A guide to firing test LLM calls and watching them show up in the dashboard.
 Everything runs locally. You need **two terminals**, both opened at the
