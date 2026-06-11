@@ -1,10 +1,10 @@
 {
-  "name": "tokenmeter",
+  "name": "tokentab",
   "version": "0.1.0",
   "description": "Local-first LLM usage & cost tracker. Wrap your OpenAI/Anthropic/Gemini client in one line to measure tokens, cost, latency and per-feature spend — with a budget guard and a local dashboard. Zero exfiltration, zero runtime deps in the core.",
   "type": "module",
   "license": "MIT",
-  "author": "",
+  "author": "madhawaawishka",
   "engines": {
     "node": ">=18"
   },
@@ -26,11 +26,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/tokenmeter.git"
+    "url": "git+https://github.com/madhawaawishka/tokenmeter.git"
   },
-  "homepage": "https://github.com/your-org/tokenmeter#readme",
+  "homepage": "https://github.com/madhawaawishka/tokenmeter#readme",
   "bugs": {
-    "url": "https://github.com/your-org/tokenmeter/issues"
+    "url": "https://github.com/madhawaawishka/tokenmeter/issues"
   },
   "exports": {
     ".": {
@@ -49,7 +49,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "tokenmeter": "./dist/cli.js"
+    "tokentab": "./dist/cli.js"
   },
   "files": [
     "dist",

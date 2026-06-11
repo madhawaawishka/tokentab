@@ -154,9 +154,9 @@ function confirm(question: string): Promise<boolean> {
 }
 
 function printHelp(): void {
-  console.log(`tokenmeter — local-first LLM usage & cost tracker
+  console.log(`tokentab — local-first LLM usage & cost tracker
 
-Usage: tokenmeter <command> [options]
+Usage: tokentab <command> [options]
 
 Commands:
   dashboard            Start the local web dashboard
