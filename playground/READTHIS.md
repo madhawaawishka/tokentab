@@ -19,7 +19,7 @@ pnpm build
 node playground\server.mjs                          # → http://127.0.0.1:4000
 
 # terminal 2 — the usage view portal (shows data)
-npx tokenmeter dashboard                            # → http://127.0.0.1:3000
+npx tokentab dashboard                              # → http://127.0.0.1:3000
 ```
 
 Then open **http://127.0.0.1:4000**, click **Run** buttons, and refresh
@@ -33,7 +33,7 @@ Then open **http://127.0.0.1:4000**, click **Run** buttons, and refresh
 |---|---|---|
 | **What it is** | Buttons that fire real LLM calls | The dashboard that displays results |
 | **URL** | http://127.0.0.1:4000 | http://127.0.0.1:3000 |
-| **Started by** | `node playground\server.mjs` | `npx tokenmeter dashboard` |
+| **Started by** | `node playground\server.mjs` | `npx tokentab dashboard` |
 | **Has buttons?** | ✅ yes — click to generate data | ❌ no — read-only charts |
 
 They share the same store file (`.tokenmeter\usage.db`), so anything you fire
@@ -129,7 +129,7 @@ curl.exe -X POST "http://127.0.0.1:4000/api/burst?n=8"
 In a **second terminal**, also at the project root:
 
 ```powershell
-npx tokenmeter dashboard
+npx tokentab dashboard
 ```
 
 Opens **http://127.0.0.1:3000**. After clicking buttons on :4000, **refresh**
@@ -149,7 +149,7 @@ this page. You'll see:
 To wipe all recorded usage and start fresh:
 
 ```powershell
-npx tokenmeter reset --yes
+npx tokentab reset --yes
 ```
 
 ---
@@ -172,6 +172,6 @@ npx tokenmeter reset --yes
 `@google/genai`), wraps each in `withTracking(...)`, and points tokenmeter at
 `.tokenmeter\usage.db`. Every button click sends `POST /api/run`, which makes a
 real API call through the wrapper — so tokenmeter records the tokens, cost, tag,
-and latency to the store. The dashboard (`npx tokenmeter dashboard`) reads that
+and latency to the store. The dashboard (`npx tokentab dashboard`) reads that
 same store and renders it. **Button click (:4000) → real API call → usage.db →
 dashboard (:3000).**
