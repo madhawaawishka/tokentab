@@ -105,7 +105,7 @@ try {
   assert.deepEqual(by.map((r) => r.key).sort(), ["default", "summarize"]);
 
   const html = await (await fetch(`http://127.0.0.1:${port}/`)).text();
-  assert.ok(html.includes("tokenmeter"), "index.html served");
+  assert.ok(html.includes("tokentab"), "index.html served");
   console.log("dashboard OK: overview calls=2, by-tag served, budget status, index.html served");
 } finally {
   await new Promise((resolve) => {
