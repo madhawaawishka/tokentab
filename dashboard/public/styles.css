@@ -1,9 +1,9 @@
 :root {
-  --bg: #0c0e14;
-  --panel: #151823;
-  --panel-2: #1c2030;
-  --line: #262b3d;
-  --text: #e7e9f0;
+  --bg: #0a0a0a;
+  --panel: #171717;
+  --panel-2: #222222;
+  --line: #2a2a2a;
+  --text: #ffffff;
   --muted: #8b90a3;
   --accent: #6ee7b7;
   --accent-2: #60a5fa;
@@ -19,7 +19,7 @@
 
 body {
   margin: 0;
-  background: radial-gradient(1200px 600px at 80% -10%, #16203a 0%, var(--bg) 55%);
+  background: var(--bg);
   color: var(--text);
   font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
@@ -33,7 +33,7 @@ body {
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
-  background: rgba(12, 14, 20, 0.8);
+  background: rgba(10, 10, 10, 0.8);
   backdrop-filter: blur(8px);
   z-index: 10;
 }
@@ -144,7 +144,7 @@ main {
   box-shadow: var(--shadow);
 }
 .panel.headline {
-  border-color: #2c3a4f;
+  border-color: #333333;
 }
 .panel-head {
   display: flex;

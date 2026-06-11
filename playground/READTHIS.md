@@ -6,11 +6,14 @@ Everything runs locally. You need **two terminals**, both opened at the
 
 ---
 
-## TL;DR — the 4 commands
+## TL;DR — the commands
 
 ```powershell
 # one-time: add your keys
 copy playground\.env.example playground\.env      # then paste keys into playground\.env
+
+# build the package (also required after changing src/ or dashboard/ files)
+pnpm build
 
 # terminal 1 — the API hitting portal (generates data)
 node playground\server.mjs                          # → http://127.0.0.1:4000

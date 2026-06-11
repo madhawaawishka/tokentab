@@ -89,7 +89,7 @@ async function renderTimeseries() {
     .map((f) => {
       const yy = pad.t + f * (H - pad.t - pad.b);
       const val = max * (1 - f);
-      return `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="#262b3d"/>
+      return `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="#2a2a2a"/>
               <text x="${pad.l - 8}" y="${yy + 4}" fill="#8b90a3" font-size="11" text-anchor="end">${fmtUSD(val)}</text>`;
     })
     .join("");
