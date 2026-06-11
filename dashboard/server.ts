@@ -5,7 +5,7 @@ import { type IncomingMessage, type ServerResponse, createServer } from "node:ht
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getBudgetConfig } from "../src/config.js";
-import { breakdown, costOverTime, overview, recentCalls } from "../src/report.js";
+import { breakdown, costOverTime, dailyActivity, overview, recentCalls } from "../src/report.js";
 import type { BudgetWindow } from "../src/types.js";
 
 export interface DashboardOptions {
@@ -85,6 +85,11 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       const g = url.searchParams.get("granularity");
       const gran = g === "week" || g === "month" ? g : "day";
       json(res, 200, await costOverTime(window, gran));
+      return true;
+    }
+    if (path === "/api/activity") {
+      const days = Math.min(366, Math.max(1, Number(url.searchParams.get("days") ?? 365) || 365));
+      json(res, 200, await dailyActivity(days));
       return true;
     }
     if (path === "/api/recent") {

@@ -51,6 +51,46 @@
         <div id="timeseries" class="chart"></div>
       </section>
 
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Activity heatmap <span class="hint">daily calls, last 12 months</span></h2>
+          <div class="heat-controls">
+            <div class="seg small" id="heat-seg">
+              <button data-heatmode="2d">2D</button>
+              <button data-heatmode="3d" class="active">3D</button>
+            </div>
+            <span class="tz-label" id="tz-label"></span>
+          </div>
+        </div>
+        <div id="heatmap" class="chart heatmap"></div>
+        <div class="heat-legend">
+          <span>Less</span>
+          <span class="heat-swatch" style="background: #232830"></span>
+          <span class="heat-swatch" style="background: #0e4429"></span>
+          <span class="heat-swatch" style="background: #006d32"></span>
+          <span class="heat-swatch" style="background: #26a641"></span>
+          <span class="heat-swatch" style="background: #39d353"></span>
+          <span>More</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Usage trend <span class="hint">tokens per day</span></h2>
+          <button class="expand-btn" id="trend-expand" title="Expand">⤢</button>
+        </div>
+        <div id="trend" class="chart"></div>
+        <div class="trend-foot">
+          <span class="range-label" id="trend-start"></span>
+          <div class="trend-legend">
+            <span><span class="heat-swatch" style="background: #f08a4b"></span> input</span>
+            <span><span class="heat-swatch" style="background: #2dd4a7"></span> output</span>
+            <span><span class="heat-swatch" style="background: #f472b6"></span> estimated</span>
+          </div>
+          <span class="range-label" id="trend-end"></span>
+        </div>
+      </section>
+
       <section class="panel headline">
         <div class="panel-head">
           <h2>By feature <span class="hint">where the money goes</span></h2>

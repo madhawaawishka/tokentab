@@ -55,6 +55,10 @@ export interface TimeBucket {
   bucket: number; // epoch ms at the start of the bucket
   totalCost: number;
   totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  /** Tokens from calls whose counts were locally estimated. */
+  estimatedTokens: number;
   calls: number;
 }
 
@@ -67,10 +71,57 @@ export async function costOverTime(
   const buckets = new Map<number, TimeBucket>();
   for (const r of rows) {
     const key = bucketStart(r.timestamp, granularity);
-    const b = buckets.get(key) ?? { bucket: key, totalCost: 0, totalTokens: 0, calls: 0 };
+    const b = buckets.get(key) ?? {
+      bucket: key,
+      totalCost: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      estimatedTokens: 0,
+      calls: 0,
+    };
     b.totalCost += r.totalCost;
     b.totalTokens += r.totalTokens;
+    b.inputTokens += r.inputTokens;
+    b.outputTokens += r.outputTokens;
+    if (r.estimated) b.estimatedTokens += r.totalTokens;
     b.calls += 1;
+    buckets.set(key, b);
+  }
+  return [...buckets.values()].sort((a, b) => a.bucket - b.bucket);
+}
+
+/** One calendar day (UTC) of activity, for the heatmap. */
+export interface DayActivity {
+  bucket: number; // epoch ms at UTC midnight
+  calls: number;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalCost: number;
+}
+
+/** Daily activity for the trailing `days` days (sparse — days with no calls are omitted). */
+export async function dailyActivity(days = 365): Promise<DayActivity[]> {
+  const today = bucketStart(Date.now(), "day");
+  const since = today - (days - 1) * 86_400_000;
+  const rows = await getStore().query({ since, order: "asc" });
+  const buckets = new Map<number, DayActivity>();
+  for (const r of rows) {
+    const key = bucketStart(r.timestamp, "day");
+    const b = buckets.get(key) ?? {
+      bucket: key,
+      calls: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalCost: 0,
+    };
+    b.calls += 1;
+    b.totalTokens += r.totalTokens;
+    b.inputTokens += r.inputTokens;
+    b.outputTokens += r.outputTokens;
+    b.totalCost += r.totalCost;
     buckets.set(key, b);
   }
   return [...buckets.values()].sort((a, b) => a.bucket - b.bucket);
