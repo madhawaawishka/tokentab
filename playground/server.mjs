@@ -227,8 +227,7 @@ async function runScenario(id) {
     usage = {
       inputTokens: r.usageMetadata?.promptTokenCount ?? 0,
       outputTokens:
-        (r.usageMetadata?.candidatesTokenCount ?? 0) +
-        (r.usageMetadata?.thoughtsTokenCount ?? 0),
+        (r.usageMetadata?.candidatesTokenCount ?? 0) + (r.usageMetadata?.thoughtsTokenCount ?? 0),
     };
     text = typeof r.text === "string" ? r.text : (r.text?.() ?? "");
   }
@@ -312,8 +311,10 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`\n  tokenmeter playground → http://127.0.0.1:${PORT}`);
   console.log(`  store: ${resolve(PROJECT_ROOT, ".tokenmeter", "usage.db")}`);
-  console.log(`  keys:  groq=${GROQ_KEY ? "set" : "MISSING"}  gemini=${GEMINI_KEY ? "set" : "MISSING"}`);
-  console.log(`  dashboard: run  npx tokenmeter dashboard  (from the project root)\n`);
+  console.log(
+    `  keys:  groq=${GROQ_KEY ? "set" : "MISSING"}  gemini=${GEMINI_KEY ? "set" : "MISSING"}`,
+  );
+  console.log("  dashboard: run  npx tokenmeter dashboard  (from the project root)\n");
 });
 
 // ---- the page (inline, no build step) ------------------------------------
