@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/madhawaawishka/tokentab/main/assets/logo.svg" alt="tokentab" width="96" />
+  <img src="assets/logo.svg" alt="tokentab" width="96" />
 </p>
 <h1 align="center">tokentab</h1>
 <p align="center"><em>local-first LLM usage &amp; cost</em></p>
