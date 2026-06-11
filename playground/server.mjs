@@ -327,33 +327,33 @@ const PAGE = /* html */ `<!doctype html>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-         background: #0b0e14; color: #e6e9ef; padding: 32px; }
+         background: #0a0a0a; color: #ffffff; padding: 32px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: #8b93a7; margin: 0 0 24px; }
+  .sub { color: #8b90a3; margin: 0 0 24px; }
   .keys { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
   .pill { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .ok { background: #173a2a; color: #4ade80; }
   .miss { background: #3a1717; color: #f87171; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-  .card { background: #131722; border: 1px solid #222838; border-radius: 12px; padding: 16px; }
+  .card { background: #171717; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; }
   .card h3 { margin: 0 0 6px; font-size: 14px; }
-  .meta { color: #8b93a7; font-size: 12px; margin-bottom: 12px; }
-  .lvl { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 2px; background: #2a3142; }
+  .meta { color: #8b90a3; font-size: 12px; margin-bottom: 12px; }
+  .lvl { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 2px; background: #2a2a2a; }
   .lvl.on1 { background: #4ade80; } .lvl.on2 { background: #facc15; }
   .lvl.on3 { background: #fb923c; } .lvl.on4 { background: #f87171; }
   button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px;
            padding: 9px 14px; background: #2563eb; color: white; }
   button:hover { background: #1d4ed8; }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  button.ghost { background: #1b2130; color: #cbd2e0; border: 1px solid #2a3142; }
+  button.ghost { background: #171717; color: #ffffff; border: 1px solid #2a2a2a; }
   .bar { display: flex; gap: 10px; align-items: center; margin: 0 0 24px; flex-wrap: wrap; }
   table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 13px; }
-  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #1c2230; }
-  th { color: #8b93a7; font-weight: 600; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #2a2a2a; }
+  th { color: #8b90a3; font-weight: 600; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .err { color: #f87171; }
-  .tag { background: #1b2130; border-radius: 6px; padding: 1px 7px; font-size: 11px; }
-  code { background: #1b2130; padding: 2px 6px; border-radius: 5px; }
+  .tag { background: #222222; border-radius: 6px; padding: 1px 7px; font-size: 11px; }
+  code { background: #222222; padding: 2px 6px; border-radius: 5px; }
 </style>
 </head>
 <body>
