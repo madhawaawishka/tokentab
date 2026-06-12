@@ -5,7 +5,9 @@
  * with zero configuration. Records are kept in localStorage and mirrored,
  * best-effort, to a locally running `tokentab dashboard`.
  */
-import "./store/install-browser.js";
+import { installBrowserStoreFactory } from "./store/install-browser.js";
+
+installBrowserStoreFactory();
 
 export { withTracking } from "./tracker.js";
 export {

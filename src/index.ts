@@ -1,5 +1,7 @@
 // Install the Node (SQLite / JSON-file) store backend for this entry.
-import "./store/install-node.js";
+import { installNodeStoreFactory } from "./store/install-node.js";
+
+installNodeStoreFactory();
 
 export { withTracking } from "./tracker.js";
 export {

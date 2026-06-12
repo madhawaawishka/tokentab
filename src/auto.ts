@@ -1,8 +1,9 @@
 // Side-effect entry: `import "tokentab/auto"` turns on automatic tracking with
 // one line. Re-exports the control functions for callers who want them.
-import "./store/install-node.js";
 import { enableAutoTracking } from "./auto-instrument.js";
+import { installNodeStoreFactory } from "./store/install-node.js";
 
+installNodeStoreFactory();
 enableAutoTracking();
 
 export {

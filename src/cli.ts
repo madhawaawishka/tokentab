@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-import "./store/install-node.js";
 import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline";
 import { startDashboard } from "../dashboard/server.js";
 import { configure, getStore } from "./config.js";
+import { installNodeStoreFactory } from "./store/install-node.js";
+
+installNodeStoreFactory();
 import { breakdown, costOverTime, overview, recentCalls, toCsv, toJson } from "./report.js";
 import type { BudgetWindow } from "./types.js";
 

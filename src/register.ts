@@ -4,7 +4,8 @@
 // Enabling tracking before any app code runs means every later LLM call is
 // instrumented without touching the application source. The explicit call (vs a
 // bare `import "./auto.js"`) survives bundler tree-shaking.
-import "./store/install-node.js";
 import { enableAutoTracking } from "./auto-instrument.js";
+import { installNodeStoreFactory } from "./store/install-node.js";
 
+installNodeStoreFactory();
 enableAutoTracking();
