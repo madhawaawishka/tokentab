@@ -1,5 +1,10 @@
 export { withTracking } from "./tracker.js";
 export {
+  enableAutoTracking,
+  disableAutoTracking,
+} from "./auto-instrument.js";
+export type { AutoTrackingOptions } from "./auto-instrument.js";
+export {
   configure,
   getStore,
   resetConfig,

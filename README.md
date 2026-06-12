@@ -120,6 +120,45 @@ summarize  214    700,120  41,200  $0.8112  640
 chat       98     140,902  55,210  $0.4728  1,210
 ```
 
+## Automatic tracking (no client wrapping)
+
+Don't want to wrap each client? Turn on auto-tracking and every call to OpenAI,
+Anthropic or Gemini is measured — including **raw `fetch` calls**, not just SDK
+usage (the SDKs route through `fetch` under the hood).
+
+**One line** — add this once, before your first LLM call:
+
+```ts
+import "tokentab/auto"; // patches global fetch; that's the whole setup
+```
+
+**Zero code** — preload it at launch instead, leaving your source untouched:
+
+```bash
+node --import tokentab/register app.js
+# or
+NODE_OPTIONS="--import tokentab/register" npm start
+```
+
+Then `npx tokentab dashboard` as usual. Both forms are idempotent and respect
+`configure(...)` (pricing, `dbPath`, budget, `enabled: false`).
+
+> **Node only.** Auto-tracking instruments the server-side `fetch`. It cannot
+> track calls made **from a browser** — tokentab writes to a local SQLite/JSONL
+> file, which browsers have no access to. Run your LLM calls from a server,
+> API route, or server action and point the dashboard at that machine.
+
+For a self-hosted or proxied endpoint, map its host to a provider:
+
+```ts
+import { enableAutoTracking } from "tokentab/auto";
+
+enableAutoTracking({
+  hosts: { "my-gateway.internal": "openai" }, // merged over the built-ins
+  tag: "auto",
+});
+```
+
 ## Budget guard
 
 Stop runaway spend *before* the request leaves your process:

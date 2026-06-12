@@ -1,12 +1,12 @@
-import { randomUUID } from "node:crypto";
 import type { Adapter, ExtractedUsage, StreamAccumulator } from "./adapters/index.js";
 import { resolveAdapter } from "./adapters/index.js";
 import { registerBuiltinAdapters } from "./adapters/register.js";
 import { checkBudget } from "./budget.js";
-import { getStore, isEnabled } from "./config.js";
+import { isEnabled } from "./config.js";
 import { cost } from "./pricing/index.js";
+import { recordUsage } from "./record.js";
 import { estimate, estimateInputTokens } from "./tokenize.js";
-import type { TrackingOptions, UsageRecord } from "./types.js";
+import type { TrackingOptions } from "./types.js";
 
 registerBuiltinAdapters();
 
@@ -285,37 +285,7 @@ function writeRecord(
     latencyMs: number;
   },
 ): void {
-  const { inputCost, outputCost, totalCost, pricingMissing } = cost(
-    ctx.provider,
-    data.model,
-    data.inputTokens,
-    data.outputTokens,
-  );
-  const record: UsageRecord = {
-    id: randomUUID(),
-    timestamp: Date.now(),
-    provider: ctx.provider,
-    model: data.model,
-    inputTokens: data.inputTokens,
-    outputTokens: data.outputTokens,
-    totalTokens: data.inputTokens + data.outputTokens,
-    inputCost,
-    outputCost,
-    totalCost,
-    latencyMs: data.latencyMs,
-    tag: ctx.tag,
-    estimated: data.estimated,
-    pricingMissing,
-  };
-  // Non-blocking and failure-tolerant: a store error must never break the call.
-  try {
-    const r = getStore().append(record);
-    if (r && typeof (r as Promise<void>).catch === "function") {
-      (r as Promise<void>).catch(() => {});
-    }
-  } catch {
-    /* swallow store errors */
-  }
+  recordUsage({ provider: ctx.provider, tag: ctx.tag, ...data });
 }
 
 // ---- small helpers ----

@@ -9,6 +9,8 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     cli: "src/cli.ts",
+    auto: "src/auto.ts",
+    register: "src/register.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
