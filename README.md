@@ -141,7 +141,12 @@ NODE_OPTIONS="--import tokentab/register" npm start
 ```
 
 Then `npx tokentab dashboard` as usual. Both forms are idempotent and respect
-`configure(...)` (pricing, `dbPath`, budget, `enabled: false`).
+`configure(...)` (pricing, `dbPath`, `enabled: false`).
+
+> **No budget guard.** Auto-tracking records usage but cannot enforce the
+> [Budget guard](#budget-guard) — `fetch` is intercepted *after* the request has
+> already been sent, so there's nothing to block pre-flight. Use
+> `withTracking(...)` if you need `block`/`warn` budget enforcement.
 
 > **Node only.** Auto-tracking instruments the server-side `fetch`. It cannot
 > track calls made **from a browser** — tokentab writes to a local SQLite/JSONL
