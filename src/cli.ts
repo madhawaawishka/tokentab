@@ -2,7 +2,7 @@
 import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline";
-import { startDashboard } from "../dashboard/server.js";
+import { DEFAULT_DASHBOARD_PORT, startDashboard } from "../dashboard/server.js";
 import { configure, getStore } from "./config.js";
 import { installNodeStoreFactory } from "./store/install-node.js";
 
@@ -142,7 +142,7 @@ async function cmdReset(flags: Flags): Promise<void> {
 }
 
 async function cmdDashboard(flags: Flags): Promise<void> {
-  const port = Number(flags.port ?? 3000) || 3000;
+  const port = Number(flags.port ?? DEFAULT_DASHBOARD_PORT) || DEFAULT_DASHBOARD_PORT;
   const open = flags["no-open"] !== true && flags.open !== false;
   await startDashboard({ port, open });
 }
@@ -164,7 +164,7 @@ Usage: tokentab <command> [options]
 
 Commands:
   dashboard            Start the local web dashboard
-    --port <n>         Port (default 3000)
+    --port <n>         Port (default 4242; falls back to the next free port)
     --db <path>        Store file to read
     --no-open          Do not open the browser
 

@@ -1,12 +1,17 @@
 import { exec } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { type IncomingMessage, type ServerResponse, createServer } from "node:http";
+import { type IncomingMessage, type Server, type ServerResponse, createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getBudgetConfig, getStore } from "../src/config.js";
 import { breakdown, costOverTime, dailyActivity, overview, recentCalls } from "../src/report.js";
 import type { BudgetWindow, UsageRecord } from "../src/types.js";
+
+/** Uncommon by design — 3000 is almost always taken by the app being tracked. */
+export const DEFAULT_DASHBOARD_PORT = 4242;
+/** How many consecutive ports to try when the requested one is busy. */
+const MAX_PORT_ATTEMPTS = 20;
 
 export interface DashboardOptions {
   port?: number;
@@ -235,29 +240,54 @@ async function serveStatic(res: ServerResponse, url: URL): Promise<void> {
  * Start the local dashboard server. Binds to 127.0.0.1 only — the API and UI
  * are reachable from this machine alone. No usage data ever leaves the host.
  */
-export function startDashboard(options: DashboardOptions = {}): Promise<{ close: () => void }> {
-  const port = options.port ?? 3000;
+export async function startDashboard(
+  options: DashboardOptions = {},
+): Promise<{ close: () => void; port: number }> {
+  const preferredPort = options.port ?? DEFAULT_DASHBOARD_PORT;
   const host = options.host ?? "127.0.0.1";
 
   const server = createServer((req, res) => {
-    const url = new URL(req.url ?? "/", `http://${host}:${port}`);
+    const url = new URL(req.url ?? "/", `http://${host}`);
     void handleApi(req, res, url).then((handled) => {
       if (!handled) void serveStatic(res, url);
     });
   });
 
+  const port = await listenOnFreePort(server, preferredPort, host);
+  if (port !== preferredPort) {
+    console.error(`Port ${preferredPort} is busy — switched to ${port}.`);
+  }
+  const addr = `http://${host}:${port}`;
+  console.error(
+    `tokentab dashboard running at ${addr}  (local only — no data leaves this machine)`,
+  );
+  console.error("Press Ctrl+C to stop.");
+  if (options.open !== false) openBrowser(addr);
+  return { close: () => server.close(), port };
+}
+
+/** Resolves true when listening, false when the port is taken; rejects otherwise. */
+function tryListen(server: Server, port: number, host: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    server.once("error", reject);
+    const onError = (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE" || err.code === "EACCES") resolve(false);
+      else reject(err);
+    };
+    server.once("error", onError);
     server.listen(port, host, () => {
-      const addr = `http://${host}:${port}`;
-      console.error(
-        `tokentab dashboard running at ${addr}  (local only — no data leaves this machine)`,
-      );
-      console.error("Press Ctrl+C to stop.");
-      if (options.open !== false) openBrowser(addr);
-      resolve({ close: () => server.close() });
+      server.removeListener("error", onError);
+      resolve(true);
     });
   });
+}
+
+/** Bind to the preferred port, walking up to the next free one when busy. */
+async function listenOnFreePort(server: Server, preferred: number, host: string): Promise<number> {
+  const last = Math.min(preferred + MAX_PORT_ATTEMPTS - 1, 65535);
+  for (let port = preferred; port <= last; port++) {
+    if (await tryListen(server, port, host)) return port;
+  }
+  throw new Error(`No free port found between ${preferred} and ${last}.`);
 }
 
 function openBrowser(addr: string): void {

@@ -90,7 +90,7 @@ Records are appended to a local store (`./.tokenmeter/usage.db` in Node,
 ### 3. See where the money goes
 
 ```bash
-npx tokentab dashboard   # charts at http://127.0.0.1:3000
+npx tokentab dashboard   # charts at http://127.0.0.1:4242
 ```
 
 Make a few LLM calls, open the dashboard, and the counted tokens and cost are
@@ -201,12 +201,12 @@ How storage works in the browser:
 - Records are kept in **`localStorage`** (capped at the most recent 5,000;
   in-memory fallback when localStorage is unavailable).
 - While the page is served from **localhost**, records are also mirrored,
-  best-effort, to a running `tokentab dashboard` at `http://127.0.0.1:3000` —
+  best-effort, to a running `tokentab dashboard` at `http://127.0.0.1:4242` —
   start it with `npx tokentab dashboard` and your browser app's usage shows up
   there. If the dashboard isn't running, mirroring silently retries on the
   next call or page reload; nothing ever breaks the host app.
 - On a **deployed** page, mirroring is off unless you opt in explicitly:
-  `configure({ syncUrl: "http://127.0.0.1:3000" })` (or `syncUrl: false` to
+  `configure({ syncUrl: "http://127.0.0.1:4242" })` (or `syncUrl: false` to
   disable it everywhere). Usage data never leaves the visitor's machine.
 
 You can also read stats in-app: `overview()`, `breakdown("model")`,
@@ -266,7 +266,7 @@ You can also register a fully custom adapter with `registerAdapter(...)` for any
 
 ```
 tokentab dashboard        Start the local web dashboard
-  --port <n>              Port (default 3000)
+  --port <n>              Port (default 4242; falls back to the next free port)
   --db <path>             Store file to read
   --no-open               Don't open the browser
 
@@ -292,7 +292,7 @@ import { configure } from "tokentab";
 configure({
   store: "sqlite",                  // "sqlite" | "json" | "auto" | custom Store instance
   dbPath: "./.tokenmeter/usage.db", // where records live (localStorage key in the browser)
-  syncUrl: "http://127.0.0.1:3000", // browser only — dashboard to mirror records to (false = off)
+  syncUrl: "http://127.0.0.1:4242", // browser only — dashboard to mirror records to (false = off)
   redactPrompts: true,              // default true — prompt/completion text is never stored
   enabled: true,                    // kill switch — false = calls pass through untracked
   budget: { limit: 10, window: "month", mode: "warn" },

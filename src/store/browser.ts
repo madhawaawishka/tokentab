@@ -5,7 +5,7 @@ const DEFAULT_KEY = "tokentab.usage.v1";
 /** Keep localStorage well under quota; old records are dropped first. */
 const MAX_RECORDS = 5000;
 /** Default `tokentab dashboard` address records are mirrored to during local dev. */
-const DEFAULT_SYNC_URL = "http://127.0.0.1:3000";
+const DEFAULT_SYNC_URL = "http://127.0.0.1:4242";
 const SYNC_DEBOUNCE_MS = 1500;
 
 export interface BrowserStoreOptions {
@@ -14,7 +14,7 @@ export interface BrowserStoreOptions {
   /**
    * Base URL of a running `tokentab dashboard` to mirror records to, or
    * `false` to disable mirroring. When omitted, mirroring to
-   * http://127.0.0.1:3000 is enabled only while the page itself is served
+   * http://127.0.0.1:4242 is enabled only while the page itself is served
    * from localhost (i.e. during development) — deployed apps never emit
    * network traffic unless a URL is configured explicitly.
    */
