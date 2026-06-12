@@ -196,7 +196,9 @@ export function enableAutoTracking(options: AutoTrackingOptions = {}): void {
   const patched: Fetch = async (input, init) => {
     const url = urlOf(input);
     const started = Date.now();
-    const res = await stateForCall.original(input as RequestInfo, init);
+    // Call with globalThis as the receiver: invoking native fetch with any
+    // other `this` throws "Illegal invocation" in browsers.
+    const res = await stateForCall.original.call(globalThis, input as RequestInfo, init);
     try {
       if (!isEnabled() || !res.ok) return res;
       const provider = providerFor(url, stateForCall.hosts);

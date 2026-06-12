@@ -1,6 +1,6 @@
 {
   "name": "tokentab",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local-first LLM usage & cost tracker. Wrap your OpenAI/Anthropic/Gemini client in one line to measure tokens, cost, latency and per-feature spend — with a budget guard and a local dashboard. Zero exfiltration, zero runtime deps in the core.",
   "type": "module",
   "license": "MIT",
