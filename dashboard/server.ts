@@ -161,6 +161,11 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       await handleIngest(req, res);
       return true;
     }
+    if (path === "/api/reset" && req.method === "POST") {
+      await getStore().reset();
+      json(res, 200, { ok: true });
+      return true;
+    }
     if (path === "/api/overview") {
       const budget = getBudgetConfig();
       const ov = await overview(window);

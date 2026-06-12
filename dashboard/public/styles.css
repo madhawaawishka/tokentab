@@ -63,13 +63,22 @@ body {
   align-items: center;
   gap: 16px;
 }
-.privacy {
-  color: var(--accent);
+.clear-btn {
+  color: #f87171;
   font-size: 12px;
+  font-family: inherit;
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px 10px;
   background: var(--panel);
+  cursor: pointer;
+}
+.clear-btn:hover {
+  border-color: #f87171;
+}
+.clear-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .seg {
