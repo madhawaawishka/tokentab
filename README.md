@@ -1,182 +1,283 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="tokentab" width="96" />
+  <img src="https://raw.githubusercontent.com/madhawaawishka/tokenmeter/main/assets/logo.svg" alt="tokentab logo" width="110" />
 </p>
+
 <h1 align="center">tokentab</h1>
-<p align="center"><em>local-first LLM usage &amp; cost</em></p>
+
+<p align="center">
+  <strong>Local-first LLM usage &amp; cost tracker.</strong><br/>
+  Wrap your OpenAI / Anthropic / Gemini client in one line to measure tokens, cost, latency and
+  per-feature spend — with a budget guard and a local dashboard.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/tokentab"><img src="https://img.shields.io/npm/v/tokentab?color=cb3837&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/tokentab"><img src="https://img.shields.io/npm/dm/tokentab" alt="npm downloads"></a>
+  <a href="https://github.com/madhawaawishka/tokenmeter/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white" alt="node >= 18">
+  <img src="https://img.shields.io/badge/types-included-3178c6?logo=typescript&logoColor=white" alt="TypeScript types included">
+</p>
 
 ---
 
-# 🎮 tokentab playground — how to run it again
+```ts
+import OpenAI from "openai";
+import { withTracking } from "tokentab";
 
-A guide to firing test LLM calls and watching them show up in the dashboard.
-Everything runs locally. You need **two terminals**, both opened at the
-**project root** (`...\tokenmeter`).
+const openai = withTracking(new OpenAI()); // ← that's it
 
----
-
-## TL;DR — the 4 commands
-
-```powershell
-# one-time: add your keys
-copy playground\.env.example playground\.env      # then paste keys into playground\.env
-
-# terminal 1 — the API hitting portal (generates data)
-node playground\server.mjs                          # → http://127.0.0.1:4000
-
-# terminal 2 — the usage view portal (shows data)
-npx tokentab dashboard                            # → http://127.0.0.1:3000
+// ...use the client exactly as before. Every call is now metered.
 ```
 
-Then open **http://127.0.0.1:4000**, click **Run** buttons, and refresh
-**http://127.0.0.1:3000** to watch cost/tokens fill in.
-
----
-
-## The two portals (don't mix them up)
-
-| | **API hitting portal** | **Usage view portal** |
-|---|---|---|
-| **What it is** | Buttons that fire real LLM calls | The dashboard that displays results |
-| **URL** | http://127.0.0.1:4000 | http://127.0.0.1:3000 |
-| **Started by** | `node playground\server.mjs` | `npx tokentab dashboard` |
-| **Has buttons?** | ✅ yes — click to generate data | ❌ no — read-only charts |
-
-They share the same store file (`.tokenmeter\usage.db`), so anything you fire
-on **:4000** appears on **:3000** after a refresh.
-
----
-
-## Step 1 — Add your API keys (one-time)
-
-```powershell
-copy playground\.env.example playground\.env
-notepad playground\.env
-```
-
-Paste one or both keys (either provider works on its own):
-
-```
-GROQ_API_KEY=gsk_xxxxxxxxxxxx
-GEMINI_API_KEY=AIzaxxxxxxxxxxxx
-```
-
-- Groq keys: https://console.groq.com/keys
-- Gemini keys: https://aistudio.google.com/apikey
-
-> `playground\.env` is gitignored — your keys won't be committed.
-
----
-
-## Step 2 — Start the API hitting portal (terminal 1)
-
-From the project root:
-
-```powershell
-node playground\server.mjs
-```
-
-You'll see:
-
-```
-  tokenmeter playground → http://127.0.0.1:4000
-  store: ...\tokenmeter\.tokenmeter\usage.db
-  keys:  groq=set  gemini=set
-```
-
-Open **http://127.0.0.1:4000** in your browser. Leave this terminal running.
-
----
-
-## Step 3 — Hit the endpoints
-
-**Easiest — click buttons** on http://127.0.0.1:4000:
-
-- Each card has a **Run** button → fires **one** real LLM call of that size.
-- **⚡ Burst (8 random calls)** → fires 8 calls at once to fill the dashboard fast.
-- Results appear instantly in the table at the bottom (tokens in/out, latency, preview).
-
-**Or hit the endpoints directly** (PowerShell):
-
-```powershell
-# one call
-curl.exe -X POST "http://127.0.0.1:4000/api/run?id=groq-classify-tiny"
-
-# 8 calls at once
-curl.exe -X POST "http://127.0.0.1:4000/api/burst?n=8"
-```
-
-### Available endpoints (on :4000)
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET`  | `/`                        | The button page |
-| `GET`  | `/api/scenarios`           | List scenario ids + which keys are set |
-| `POST` | `/api/run?id=<scenario>`   | Fire **one** call |
-| `POST` | `/api/burst?n=8`           | Fire N calls (1–20) |
-
-### Scenario ids (the `id=` values) — varied provider / model / tag / token size
-
-| id | provider | model | tag | size |
-|---|---|---|---|---|
-| `groq-classify-tiny`      | groq   | llama-3.1-8b-instant     | classify  | tiny |
-| `groq-summarize-small`    | groq   | llama-3.1-8b-instant     | summarize | small |
-| `groq-draft-medium`       | groq   | llama-3.3-70b-versatile  | draft     | medium |
-| `groq-codegen-large`      | groq   | llama-3.3-70b-versatile  | codegen   | large |
-| `gemini-classify-tiny`    | gemini | gemini-2.5-flash-lite    | classify  | tiny |
-| `gemini-translate-small`  | gemini | gemini-2.5-flash-lite    | translate | small |
-| `gemini-summarize-medium` | gemini | gemini-2.5-flash         | summarize | medium |
-| `gemini-chat-large`       | gemini | gemini-2.5-flash         | chat      | large |
-
----
-
-## Step 4 — Watch the usage view portal (terminal 2)
-
-In a **second terminal**, also at the project root:
-
-```powershell
+```bash
 npx tokentab dashboard
 ```
 
-Opens **http://127.0.0.1:3000**. After clicking buttons on :4000, **refresh**
-this page. You'll see:
+Your tokens, cost, latency and per-feature spend — charted in your browser, from a database that **never leaves your machine**.
 
-- **Total cost / tokens / latency / estimated** cards
-- **Cost over time** (Day / Week / Month)
-- **By feature** — switchable between **Tag / Model / Provider**
+## Why tokentab?
 
-> Tip: the dashboard defaults to the **Day** window. If you don't see data,
-> click **All** in the top-right.
+LLM bills are death by a thousand cuts: which *feature* is burning the money? Provider dashboards show totals per API key, not per feature — and shipping your usage data to a SaaS just to find out is overkill.
 
----
+- 🪄 **One-line setup** — wrap your existing SDK client; no proxy server, no code rewrites
+- 🏷️ **Per-feature attribution** — tag calls (`summarize`, `chat`, `codegen`…) and see exactly where the spend goes
+- 💸 **Cost calculation** — bundled, overridable pricing table for OpenAI, Anthropic and Gemini models
+- 🚦 **Budget guard** — set a daily/weekly/monthly USD limit; `block` throws *before* the request is sent, `warn` just logs
+- 📊 **Local dashboard** — `npx tokentab dashboard` for charts; `npx tokentab report` for the terminal
+- 🌊 **Streaming support** — streamed responses are measured too (token counts estimated when the provider doesn't report usage)
+- 🔒 **Local-first & private** — records go to a local SQLite/JSONL file; prompts are never stored, nothing is ever transmitted
+- 🪶 **Zero runtime dependencies** in the core, full TypeScript types, ESM + CJS
 
-## Resetting the data
+## Installation
 
-To wipe all recorded usage and start fresh:
-
-```powershell
-npx tokentab reset --yes
+```bash
+npm install tokentab
+# or
+pnpm add tokentab
+# or
+yarn add tokentab
 ```
 
----
+Requires **Node.js ≥ 18**.
 
-## Troubleshooting
+## Quick start
 
-| Symptom | Fix |
-|---|---|
-| Buttons greyed out / `"...API_KEY is not set"` | Add the key to `playground\.env`, restart terminal 1 |
-| Dashboard empty after firing calls | Click **All** in the dashboard top-right; or refresh the page |
-| `Cannot find module '../dist/index.js'` | Run `pnpm build` first (rebuilds `dist/`) |
-| `:4000` won't start (`EADDRINUSE`) | Another instance is running, or set a port: `$env:PORT=4100; node playground\server.mjs` |
-| Groq `400 model_decommissioned` | Groq retired a model — update the `model` in `playground\server.mjs` |
+### 1. Wrap your client
 
----
+```ts
+import OpenAI from "openai";
+import { withTracking } from "tokentab";
 
-## How it works (one paragraph)
+const openai = withTracking(new OpenAI()); // provider auto-detected
 
-`playground\server.mjs` builds provider clients (Groq over `fetch`, Gemini via
-`@google/genai`), wraps each in `withTracking(...)`, and points tokenmeter at
-`.tokenmeter\usage.db`. Every button click sends `POST /api/run`, which makes a
-real API call through the wrapper — so tokenmeter records the tokens, cost, tag,
-and latency to the store. The dashboard (`npx tokentab dashboard`) reads that
-same store and renders it. **Button click (:4000) → real API call → usage.db →
-dashboard (:3000).**
+const res = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Summarize: the quick brown fox..." }],
+});
+```
+
+The wrapped client is a transparent proxy — same types, same methods, same behavior. Tokens, cost and latency for every call are appended to a local store (`./.tokenmeter/usage.db`).
+
+### 2. Tag calls by feature
+
+```ts
+const summarizer = openai.withTag("summarize");
+const chatbot = openai.withTag("chat");
+
+await summarizer.chat.completions.create({ /* ... */ }); // recorded as "summarize"
+await chatbot.chat.completions.create({ /* ... */ });    // recorded as "chat"
+```
+
+Or set a default tag for the whole wrapper:
+
+```ts
+const openai = withTracking(new OpenAI(), { tag: "drafting" });
+```
+
+### 3. See where the money goes
+
+```bash
+npx tokentab dashboard   # charts at http://127.0.0.1:3000
+npx tokentab report      # summary in your terminal
+```
+
+```
+tokentab — usage report (month)
+
+Metric           Value
+---------------  --------
+Total cost       $1.2840
+Calls            312
+Input tokens     841,022
+Output tokens    96,410
+Avg latency      820 ms
+
+By tag:
+
+tag        calls  in       out     cost     avg ms
+---------  -----  -------  ------  -------  ------
+summarize  214    700,120  41,200  $0.8112  640
+chat       98     140,902  55,210  $0.4728  1,210
+```
+
+## Budget guard
+
+Stop runaway spend *before* the request leaves your process:
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+import { BudgetExceededError, configure, withTracking } from "tokentab";
+
+configure({
+  budget: {
+    limit: 5,            // USD
+    window: "month",     // "day" | "week" | "month" | "total"
+    mode: "block",       // "block" throws pre-flight; "warn" logs and proceeds
+    perTag: { drafting: 1 }, // optional per-feature sub-limits
+  },
+});
+
+const anthropic = withTracking(new Anthropic(), { tag: "drafting" });
+
+try {
+  await anthropic.messages.create({ /* ... */ });
+} catch (err) {
+  if (err instanceof BudgetExceededError) {
+    console.error(`Blocked before sending: ${err.message}`);
+  } else {
+    throw err;
+  }
+}
+```
+
+## Supported providers
+
+| Provider | SDK | Setup |
+|---|---|---|
+| **OpenAI** | `openai` | `withTracking(new OpenAI())` — auto-detected |
+| **Anthropic** | `@anthropic-ai/sdk` | `withTracking(new Anthropic())` — auto-detected |
+| **Google Gemini** | `@google/genai` | `withTracking(new GoogleGenAI({...}))` — auto-detected |
+| **OpenAI-compatible** | any | Groq, Together, OpenRouter, Fireworks, Perplexity, Ollama, LM Studio, vLLM… |
+
+For OpenAI-compatible endpoints, select the adapter explicitly and label it however you like:
+
+```ts
+const groq = withTracking(groqClient, {
+  provider: "openai-compatible",
+  providerLabel: "groq", // how it appears in reports & the dashboard
+});
+```
+
+You can also register a fully custom adapter with `registerAdapter(...)` for anything else.
+
+## CLI
+
+```
+tokentab dashboard        Start the local web dashboard
+  --port <n>              Port (default 3000)
+  --db <path>             Store file to read
+  --no-open               Don't open the browser
+
+tokentab report           Print a usage summary to the terminal
+  --window <w>            day | week | month | total (default month)
+  --by <dim>              tag | model | provider (default tag)
+
+tokentab export           Export records to stdout or a file
+  --format <fmt>          csv | json (default csv)
+  --out <file>            Write to a file instead of stdout
+
+tokentab reset            Clear the local usage store (destructive)
+  --yes                   Skip the confirmation prompt
+```
+
+## Configuration
+
+Everything is optional — `withTracking` works out of the box with sensible defaults.
+
+```ts
+import { configure } from "tokentab";
+
+configure({
+  store: "sqlite",                  // "sqlite" | "json" | "auto" | custom Store instance
+  dbPath: "./.tokenmeter/usage.db", // where records live
+  redactPrompts: true,              // default true — prompt/completion text is never stored
+  enabled: true,                    // kill switch — false = calls pass through untracked
+  budget: { limit: 10, window: "month", mode: "warn" },
+  pricing: {
+    // merged over the bundled table — add new models or private rates
+    "openai-compatible": {
+      "llama-3.3-70b-versatile": { inputPer1M: 0.59, outputPer1M: 0.79 },
+    },
+  },
+});
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `store` | `"auto"` | SQLite when available, JSONL fallback. Bring your own by passing a `Store` implementation |
+| `dbPath` | `./.tokenmeter/usage.db` | Local store file |
+| `pricing` | bundled table | Per-model USD rates per 1M tokens, deep-merged over the built-ins |
+| `budget` | off | Pre-flight spend limit (see [Budget guard](#budget-guard)) |
+| `redactPrompts` | `true` | Prompt/completion text is never written to disk |
+| `enabled` | `true` | Set `false` to disable tracking entirely (e.g. in tests) |
+
+## Programmatic access
+
+The store is queryable, so you can build your own reporting:
+
+```ts
+import { getStore } from "tokentab";
+
+const store = getStore();
+
+// Recent calls for one feature
+const records = await store.query({ tag: "summarize", limit: 50 });
+
+// Spend grouped by model
+const byModel = await store.aggregate({ groupBy: "model" });
+
+// Total spend this month
+const spent = await store.sumCost({ since: Date.now() - 30 * 24 * 3600 * 1000 });
+```
+
+## Privacy
+
+tokentab is built local-first, by design:
+
+- **No network calls.** Usage records are written to a file on your machine, full stop.
+- **No prompt storage.** Only metadata is recorded (tokens, cost, latency, model, tag) — never the text, unless you opt out of `redactPrompts`.
+- **No telemetry.** The package phones home to no one.
+
+The recorded shape per call ([`UsageRecord`](https://github.com/madhawaawishka/tokenmeter/blob/main/src/types.ts)): provider, model, token counts, cost, latency, tag, timestamp — plus flags for whether tokens were estimated or pricing was missing, so you always know how accurate a number is.
+
+## FAQ
+
+**What if a model isn't in the pricing table?**
+The call is still recorded with its token counts and flagged `pricingMissing` — add rates via `configure({ pricing })` and future calls are costed.
+
+**Does it work with streaming?**
+Yes. When the provider reports usage on the final chunk, exact counts are used; otherwise tokentab estimates them locally and flags the record `estimated`.
+
+**Does it slow my calls down?**
+No. Tracking happens after the response resolves, and store writes are failure-tolerant — a broken disk write never breaks your LLM call.
+
+**Can the dashboard run while my app is writing?**
+Yes — the dashboard and CLI read the same store file your app writes to, so you can keep it open and refresh as calls come in.
+
+## Development
+
+```bash
+git clone https://github.com/madhawaawishka/tokenmeter.git
+cd tokenmeter
+pnpm install
+pnpm build
+pnpm test
+```
+
+There's a [playground](https://github.com/madhawaawishka/tokenmeter/tree/main/playground) for firing real LLM calls (Groq / Gemini) and watching them land in the dashboard — see [playground/READTHIS.md](https://github.com/madhawaawishka/tokenmeter/tree/main/playground/READTHIS.md).
+
+Issues and PRs welcome: [github.com/madhawaawishka/tokenmeter/issues](https://github.com/madhawaawishka/tokenmeter/issues)
+
+## License
+
+[MIT](https://github.com/madhawaawishka/tokenmeter/blob/main/LICENSE) © [madhawaawishka](https://github.com/madhawaawishka)
