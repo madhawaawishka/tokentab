@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import "./store/install-node.js";
 import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline";
@@ -140,7 +141,8 @@ async function cmdReset(flags: Flags): Promise<void> {
 
 async function cmdDashboard(flags: Flags): Promise<void> {
   const port = Number(flags.port ?? 3000) || 3000;
-  await startDashboard({ port, open: flags.open !== false });
+  const open = flags["no-open"] !== true && flags.open !== false;
+  await startDashboard({ port, open });
 }
 
 function confirm(question: string): Promise<boolean> {

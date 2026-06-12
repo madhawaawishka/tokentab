@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 import { type IncomingMessage, type ServerResponse, createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getBudgetConfig } from "../src/config.js";
+import { getBudgetConfig, getStore } from "../src/config.js";
 import { breakdown, costOverTime, dailyActivity, overview, recentCalls } from "../src/report.js";
-import type { BudgetWindow } from "../src/types.js";
+import type { BudgetWindow, UsageRecord } from "../src/types.js";
 
 export interface DashboardOptions {
   port?: number;
@@ -46,17 +46,116 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
+    // The server binds to 127.0.0.1 only; CORS lets browser apps tracked with
+    // tokentab mirror their records here during local development.
+    "access-control-allow-origin": "*",
   });
   res.end(data);
+}
+
+function readBody(req: IncomingMessage, limit = 5 * 1024 * 1024): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error("payload too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    req.on("error", reject);
+  });
+}
+
+/** Validate + coerce one ingested record; null when it is unusable. */
+function sanitizeRecord(raw: unknown): UsageRecord | null {
+  const r = raw as Record<string, unknown>;
+  if (!r || typeof r !== "object") return null;
+  if (typeof r.id !== "string" || !r.id) return null;
+  const timestamp = Number(r.timestamp);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const inputTokens = num(r.inputTokens);
+  const outputTokens = num(r.outputTokens);
+  return {
+    id: r.id,
+    timestamp,
+    provider: typeof r.provider === "string" ? r.provider : "unknown",
+    model: typeof r.model === "string" ? r.model : "unknown",
+    inputTokens,
+    outputTokens,
+    totalTokens: num(r.totalTokens) || inputTokens + outputTokens,
+    inputCost: num(r.inputCost),
+    outputCost: num(r.outputCost),
+    totalCost: num(r.totalCost),
+    latencyMs: num(r.latencyMs),
+    tag: typeof r.tag === "string" ? r.tag : "default",
+    estimated: r.estimated === true,
+    pricingMissing: r.pricingMissing === true,
+  };
+}
+
+/**
+ * Ingest records mirrored from a browser app's localStorage store. Re-sends
+ * are deduplicated by record id (the SQLite store upserts; for other stores we
+ * check existing ids in the batch's time range).
+ */
+async function handleIngest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readBody(req));
+  } catch (err) {
+    json(res, 400, { error: err instanceof Error ? err.message : "invalid JSON" });
+    return;
+  }
+  if (!Array.isArray(parsed)) {
+    json(res, 400, { error: "expected an array of usage records" });
+    return;
+  }
+  const records = parsed.map(sanitizeRecord).filter((r): r is UsageRecord => r !== null);
+  if (records.length === 0) {
+    json(res, 200, { ingested: 0, skipped: parsed.length });
+    return;
+  }
+
+  const store = getStore();
+  const since = Math.min(...records.map((r) => r.timestamp));
+  const existing = new Set((await store.query({ since })).map((r) => r.id));
+  let ingested = 0;
+  for (const record of records) {
+    if (existing.has(record.id)) continue;
+    await store.append(record);
+    ingested++;
+  }
+  json(res, 200, { ingested, skipped: parsed.length - ingested });
 }
 
 async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
   const path = url.pathname;
   if (!path.startsWith("/api/")) return false;
 
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-headers": "content-type",
+      "access-control-max-age": "86400",
+    });
+    res.end();
+    return true;
+  }
+
   const window = asWindow(url.searchParams.get("window"));
 
   try {
+    if (path === "/api/ingest" && req.method === "POST") {
+      await handleIngest(req, res);
+      return true;
+    }
     if (path === "/api/overview") {
       const budget = getBudgetConfig();
       const ov = await overview(window);

@@ -148,10 +148,9 @@ Then `npx tokentab dashboard` as usual. Both forms are idempotent and respect
 > already been sent, so there's nothing to block pre-flight. Use
 > `withTracking(...)` if you need `block`/`warn` budget enforcement.
 
-> **Node only.** Auto-tracking instruments the server-side `fetch`. It cannot
-> track calls made **from a browser** — tokentab writes to a local SQLite/JSONL
-> file, which browsers have no access to. Run your LLM calls from a server,
-> API route, or server action and point the dashboard at that machine.
+> **Works in the browser too.** In a web app the same import patches the
+> browser's `fetch`; records go to `localStorage` and are mirrored to a locally
+> running `tokentab dashboard`. See [Browser apps](#browser-apps-vite-webpack-).
 
 For a self-hosted or proxied endpoint, map its host to a provider:
 
@@ -163,6 +162,38 @@ enableAutoTracking({
   tag: "auto",
 });
 ```
+
+## Browser apps (Vite, webpack, …)
+
+tokentab ships a dedicated browser build, selected automatically by your
+bundler via the package's `browser` export condition — no config needed. It
+contains no `node:` imports, so it bundles cleanly in Vite, webpack, Next.js
+client components, etc.
+
+```ts
+// Same one-liner as on the server — patches the browser's fetch:
+import "tokentab/auto";
+
+// Or wrap a client explicitly:
+import { withTracking } from "tokentab";
+const ai = withTracking(new GoogleGenAI({ apiKey }));
+```
+
+How storage works in the browser:
+
+- Records are kept in **`localStorage`** (capped at the most recent 5,000;
+  in-memory fallback when localStorage is unavailable).
+- While the page is served from **localhost**, records are also mirrored,
+  best-effort, to a running `tokentab dashboard` at `http://127.0.0.1:3000` —
+  start it with `npx tokentab dashboard` and your browser app's usage shows up
+  there. If the dashboard isn't running, mirroring silently retries on the
+  next call or page reload; nothing ever breaks the host app.
+- On a **deployed** page, mirroring is off unless you opt in explicitly:
+  `configure({ syncUrl: "http://127.0.0.1:3000" })` (or `syncUrl: false` to
+  disable it everywhere). Usage data never leaves the visitor's machine.
+
+You can also read stats in-app: `overview()`, `breakdown("model")`,
+`recentCalls()` etc. are exported from the package root.
 
 ## Budget guard
 
