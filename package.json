@@ -39,7 +39,7 @@
     "type": "git",
     "url": "git+https://github.com/madhawaawishka/tokenmeter.git"
   },
-  "homepage": "https://tokentab.netlify.app/",
+  "homepage": "https://tokentab.netlify.app",
   "bugs": {
     "url": "https://github.com/madhawaawishka/tokenmeter/issues"
   },
