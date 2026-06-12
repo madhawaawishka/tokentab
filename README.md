@@ -7,7 +7,7 @@
 <p align="center">
   <strong>Local-first LLM usage &amp; cost tracker.</strong><br/>
   Wrap your OpenAI / Anthropic / Gemini client in one line to measure tokens, cost, latency and
-  per-feature spend — with a budget guard and a local dashboard.
+  per-feature spend — with a budget guard and a local dashboard. Works in Node <em>and</em> the browser.
 </p>
 
 <p align="center">
@@ -20,20 +20,21 @@
 
 ---
 
+```bash
+npm install tokentab
+```
+
 ```ts
-import OpenAI from "openai";
-import { withTracking } from "tokentab";
-
-const openai = withTracking(new OpenAI()); // ← that's it
-
-// ...use the client exactly as before. Every call is now metered.
+import "tokentab/auto"; // ← one line, before your first LLM call. That's it.
 ```
 
 ```bash
 npx tokentab dashboard
 ```
 
-Your tokens, cost, latency and per-feature spend — charted in your browser, from a database that **never leaves your machine**.
+Every OpenAI, Anthropic and Gemini call — SDK or raw `fetch`, Node or browser —
+is now counted automatically. Your tokens, cost, latency and per-feature spend,
+charted in your browser, from data that **never leaves your machine**.
 
 ## Why tokentab?
 
@@ -45,7 +46,8 @@ LLM bills are death by a thousand cuts: which *feature* is burning the money? Pr
 - 🚦 **Budget guard** — set a daily/weekly/monthly USD limit; `block` throws *before* the request is sent, `warn` just logs
 - 📊 **Local dashboard** — `npx tokentab dashboard` for charts; `npx tokentab report` for the terminal
 - 🌊 **Streaming support** — streamed responses are measured too (token counts estimated when the provider doesn't report usage)
-- 🔒 **Local-first & private** — records go to a local SQLite/JSONL file; prompts are never stored, nothing is ever transmitted
+- 🌐 **Node and browser** — server apps use a local SQLite/JSONL file; web apps (Vite, webpack, …) get a dedicated browser build backed by `localStorage`, picked automatically by the bundler
+- 🔒 **Local-first & private** — prompts are never stored, and usage data never leaves your machine
 - 🪶 **Zero runtime dependencies** in the core, full TypeScript types, ESM + CJS
 
 ## Installation
@@ -58,11 +60,46 @@ pnpm add tokentab
 yarn add tokentab
 ```
 
-Requires **Node.js ≥ 18**.
+Requires **Node.js ≥ 18** for server apps and the CLI. Browser apps need no
+extra setup — any modern bundler (Vite, webpack, Rollup, esbuild) automatically
+picks the package's browser build. tokentab is a JavaScript/TypeScript library;
+it does not instrument Python (or other non-JS) applications.
 
 ## Quick start
 
-### 1. Wrap your client
+### 1. Install
+
+```bash
+npm install tokentab
+```
+
+### 2. Add one line — tokens are counted automatically
+
+```ts
+import "tokentab/auto";
+```
+
+Put it once at your app's entry point (e.g. `main.ts` / `index.js` / `App.jsx`),
+before the first LLM call. Nothing else to set up: every call to OpenAI,
+Anthropic or Gemini is detected — whether it goes through an SDK or raw
+`fetch` — and its token counts are read straight from the provider's response
+(exact, not guessed; estimated only when a response carries no usage at all).
+Records are appended to a local store (`./.tokenmeter/usage.db` in Node,
+`localStorage` in the browser).
+
+### 3. See where the money goes
+
+```bash
+npx tokentab dashboard   # charts at http://127.0.0.1:3000
+```
+
+Make a few LLM calls, open the dashboard, and the counted tokens and cost are
+there.
+
+### Optional: wrap a client for tags & budgets
+
+Auto mode counts everything under one tag. To attribute spend per feature (or
+use the [Budget guard](#budget-guard)), wrap the SDK client object instead:
 
 ```ts
 import OpenAI from "openai";
@@ -70,17 +107,6 @@ import { withTracking } from "tokentab";
 
 const openai = withTracking(new OpenAI()); // provider auto-detected
 
-const res = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [{ role: "user", content: "Summarize: the quick brown fox..." }],
-});
-```
-
-The wrapped client is a transparent proxy — same types, same methods, same behavior. Tokens, cost and latency for every call are appended to a local store (`./.tokenmeter/usage.db`).
-
-### 2. Tag calls by feature
-
-```ts
 const summarizer = openai.withTag("summarize");
 const chatbot = openai.withTag("chat");
 
@@ -88,18 +114,13 @@ await summarizer.chat.completions.create({ /* ... */ }); // recorded as "summari
 await chatbot.chat.completions.create({ /* ... */ });    // recorded as "chat"
 ```
 
-Or set a default tag for the whole wrapper:
+The wrapped client is a transparent proxy — same types, same methods, same
+behavior. Note `withTracking` wraps the **client object** (`new OpenAI()`,
+`new GoogleGenAI({...})`…), not a string or a URL.
 
-```ts
-const openai = withTracking(new OpenAI(), { tag: "drafting" });
-```
+### Reports
 
-### 3. See where the money goes
-
-```bash
-npx tokentab dashboard   # charts at http://127.0.0.1:3000
-npx tokentab report      # summary in your terminal
-```
+Prefer the terminal? `npx tokentab report`:
 
 ```
 tokentab — usage report (month)
@@ -120,19 +141,15 @@ summarize  214    700,120  41,200  $0.8112  640
 chat       98     140,902  55,210  $0.4728  1,210
 ```
 
-## Automatic tracking (no client wrapping)
+## Automatic tracking — how it works
 
-Don't want to wrap each client? Turn on auto-tracking and every call to OpenAI,
-Anthropic or Gemini is measured — including **raw `fetch` calls**, not just SDK
-usage (the SDKs route through `fetch` under the hood).
+The `import "tokentab/auto"` one-liner from the Quick start patches global
+`fetch`, so every call to OpenAI, Anthropic or Gemini is measured — including
+**raw `fetch` calls**, not just SDK usage (the SDKs route through `fetch`
+under the hood).
 
-**One line** — add this once, before your first LLM call:
-
-```ts
-import "tokentab/auto"; // patches global fetch; that's the whole setup
-```
-
-**Zero code** — preload it at launch instead, leaving your source untouched:
+**Zero code** — in Node you can even skip the import and preload it at launch,
+leaving your source untouched:
 
 ```bash
 node --import tokentab/register app.js
@@ -274,7 +291,8 @@ import { configure } from "tokentab";
 
 configure({
   store: "sqlite",                  // "sqlite" | "json" | "auto" | custom Store instance
-  dbPath: "./.tokenmeter/usage.db", // where records live
+  dbPath: "./.tokenmeter/usage.db", // where records live (localStorage key in the browser)
+  syncUrl: "http://127.0.0.1:3000", // browser only — dashboard to mirror records to (false = off)
   redactPrompts: true,              // default true — prompt/completion text is never stored
   enabled: true,                    // kill switch — false = calls pass through untracked
   budget: { limit: 10, window: "month", mode: "warn" },
@@ -289,8 +307,9 @@ configure({
 
 | Option | Default | Description |
 |---|---|---|
-| `store` | `"auto"` | SQLite when available, JSONL fallback. Bring your own by passing a `Store` implementation |
-| `dbPath` | `./.tokenmeter/usage.db` | Local store file |
+| `store` | `"auto"` | Node: SQLite when available, JSONL fallback. Browser: `localStorage`. Bring your own by passing a `Store` implementation |
+| `dbPath` | `./.tokenmeter/usage.db` | Local store file (in the browser: the `localStorage` key) |
+| `syncUrl` | localhost-only default | Browser builds: dashboard URL to mirror records to; `false` disables (see [Browser apps](#browser-apps-vite-webpack-)) |
 | `pricing` | bundled table | Per-model USD rates per 1M tokens, deep-merged over the built-ins |
 | `budget` | off | Pre-flight spend limit (see [Budget guard](#budget-guard)) |
 | `redactPrompts` | `true` | Prompt/completion text is never written to disk |
@@ -319,7 +338,7 @@ const spent = await store.sumCost({ since: Date.now() - 30 * 24 * 3600 * 1000 })
 
 tokentab is built local-first, by design:
 
-- **No network calls.** Usage records are written to a file on your machine, full stop.
+- **Nothing leaves your machine.** In Node, usage records are written to a local file, full stop. In the browser they live in `localStorage`; the only network traffic tokentab ever produces is the optional mirror to **your own** `tokentab dashboard` on `127.0.0.1` (on by default only while the page itself runs on localhost, and disableable with `syncUrl: false`).
 - **No prompt storage.** Only metadata is recorded (tokens, cost, latency, model, tag) — never the text, unless you opt out of `redactPrompts`.
 - **No telemetry.** The package phones home to no one.
 
@@ -337,7 +356,13 @@ Yes. When the provider reports usage on the final chunk, exact counts are used; 
 No. Tracking happens after the response resolves, and store writes are failure-tolerant — a broken disk write never breaks your LLM call.
 
 **Can the dashboard run while my app is writing?**
-Yes — the dashboard and CLI read the same store file your app writes to, so you can keep it open and refresh as calls come in.
+Yes — the dashboard and CLI read the same store file your app writes to, so you can keep it open and refresh as calls come in. Browser apps mirror their records to the running dashboard automatically during local dev.
+
+**Does it work in browser apps (Vite, React, Next.js client)?**
+Yes — since v0.3.0 a dedicated browser build ships in the package and your bundler selects it automatically. Records go to `localStorage` and sync to a locally running dashboard. See [Browser apps](#browser-apps-vite-webpack-).
+
+**Does it work with Python apps?**
+No. tokentab instruments JavaScript — it patches JS `fetch` and wraps JS SDK clients — so it works in Node.js and browser apps only.
 
 ## Development
 
