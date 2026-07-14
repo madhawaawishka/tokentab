@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # Publishes are driven purely by the registry: if the version in
+  # package.json isn't on npm yet, we release it. A failed run self-heals on
+  # the next push to main, and merge/squash commits can't confuse it.
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should-publish: ${{ steps.compare.outputs.should-publish }}
+      version: ${{ steps.compare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: compare
+        name: Compare package.json version against npm
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          PUBLISHED=$(npm view "$NAME@$VERSION" version 2>/dev/null || true)
+          if [ -z "$PUBLISHED" ]; then
+            echo "should-publish=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is not on npm yet — publishing."
+          else
+            echo "should-publish=false" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is already on npm — nothing to do."
+          fi
+
+  publish:
+    needs: check
+    if: needs.check.outputs.should-publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # npm trusted publishing (OIDC) + provenance
+      contents: write # push the release tag + GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      # Full quality gate — nothing broken ships even on a direct push to main.
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - name: Smoke test built artifacts
+        run: node test/smoke.mjs
+      # Node 22 bundles npm 10; trusted publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+      - run: npm publish
+      - name: Tag and create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ needs.check.outputs.version }}" \
+            --title "v${{ needs.check.outputs.version }}" \
+            --generate-notes
