@@ -80,7 +80,11 @@ export function configure(options: TokenmeterConfig = {}): void {
   if (options.enabled !== undefined) config.enabled = options.enabled;
 
   // Store-affecting options changed: drop the cached instance.
-  if (options.store !== undefined || options.dbPath !== undefined || options.syncUrl !== undefined) {
+  if (
+    options.store !== undefined ||
+    options.dbPath !== undefined ||
+    options.syncUrl !== undefined
+  ) {
     if (s.storeInstance?.close) {
       try {
         void s.storeInstance.close();
