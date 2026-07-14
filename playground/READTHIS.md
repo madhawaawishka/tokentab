@@ -19,11 +19,11 @@ pnpm build
 node playground\server.mjs                          # → http://127.0.0.1:4000
 
 # terminal 2 — the usage view portal (shows data)
-npx tokentab dashboard                              # → http://127.0.0.1:3000
+npx tokentab dashboard                              # → http://127.0.0.1:4242
 ```
 
 Then open **http://127.0.0.1:4000**, click **Run** buttons, and refresh
-**http://127.0.0.1:3000** to watch cost/tokens fill in.
+**http://127.0.0.1:4242** to watch cost/tokens fill in.
 
 ---
 
@@ -32,12 +32,12 @@ Then open **http://127.0.0.1:4000**, click **Run** buttons, and refresh
 | | **API hitting portal** | **Usage view portal** |
 |---|---|---|
 | **What it is** | Buttons that fire real LLM calls | The dashboard that displays results |
-| **URL** | http://127.0.0.1:4000 | http://127.0.0.1:3000 |
+| **URL** | http://127.0.0.1:4000 | http://127.0.0.1:4242 |
 | **Started by** | `node playground\server.mjs` | `npx tokentab dashboard` |
 | **Has buttons?** | ✅ yes — click to generate data | ❌ no — read-only charts |
 
 They share the same store file (`.tokenmeter\usage.db`), so anything you fire
-on **:4000** appears on **:3000** after a refresh.
+on **:4000** appears on **:4242** after a refresh.
 
 ---
 
@@ -132,7 +132,7 @@ In a **second terminal**, also at the project root:
 npx tokentab dashboard
 ```
 
-Opens **http://127.0.0.1:3000**. After clicking buttons on :4000, **refresh**
+Opens **http://127.0.0.1:4242**. After clicking buttons on :4000, **refresh**
 this page. You'll see:
 
 - **Total cost / tokens / latency / estimated** cards
@@ -174,4 +174,4 @@ npx tokentab reset --yes
 real API call through the wrapper — so tokenmeter records the tokens, cost, tag,
 and latency to the store. The dashboard (`npx tokentab dashboard`) reads that
 same store and renders it. **Button click (:4000) → real API call → usage.db →
-dashboard (:3000).**
+dashboard (:4242).**

@@ -5,5 +5,7 @@
 // instrumented without touching the application source. The explicit call (vs a
 // bare `import "./auto.js"`) survives bundler tree-shaking.
 import { enableAutoTracking } from "./auto-instrument.js";
+import { installNodeStoreFactory } from "./store/install-node.js";
 
+installNodeStoreFactory();
 enableAutoTracking();

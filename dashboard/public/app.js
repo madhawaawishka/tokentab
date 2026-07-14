@@ -450,6 +450,22 @@ $("#next").addEventListener("click", () => {
   state.page++;
   renderRecent();
 });
+$("#clear-usage").addEventListener("click", async () => {
+  if (!confirm("This permanently deletes all local usage records and resets every count to zero. Continue?")) return;
+  const btn = $("#clear-usage");
+  btn.disabled = true;
+  try {
+    const res = await fetch(new URL("/api/reset", location.origin), { method: "POST" });
+    if (!res.ok) throw new Error(`/api/reset -> ${res.status}`);
+    state.page = 0;
+    state.activity = null;
+    await refreshAll();
+  } catch (err) {
+    alert("Failed to clear usage: " + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 $("#tz-label").textContent = (() => {
   const m = -new Date().getTimezoneOffset();

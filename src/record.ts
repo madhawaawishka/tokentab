@@ -1,7 +1,21 @@
-import { randomUUID } from "node:crypto";
 import { getStore } from "./config.js";
 import { cost } from "./pricing/index.js";
 import type { UsageRecord } from "./types.js";
+
+/**
+ * Portable UUID v4. `crypto.randomUUID` exists in Node >= 18 and in browsers,
+ * but browsers expose it only in secure contexts (https / localhost), so a
+ * Math.random fallback keeps tracking alive on plain-http pages.
+ */
+function uuid(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    const v = ch === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 export interface RecordInput {
   provider: string;
@@ -25,7 +39,7 @@ export function recordUsage(data: RecordInput): void {
     data.outputTokens,
   );
   const record: UsageRecord = {
-    id: randomUUID(),
+    id: uuid(),
     timestamp: Date.now(),
     provider: data.provider,
     model: data.model,

@@ -1,6 +1,6 @@
 {
   "name": "tokentab",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Local-first LLM usage & cost tracker. Wrap your OpenAI/Anthropic/Gemini client in one line to measure tokens, cost, latency and per-feature spend — with a budget guard and a local dashboard. Zero exfiltration, zero runtime deps in the core.",
   "type": "module",
   "license": "MIT",
@@ -9,8 +9,14 @@
     "node": ">=18"
   },
   "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.cjs",
+    "./dist/index.browser.js",
+    "./dist/index.browser.cjs",
     "./dist/auto.js",
     "./dist/auto.cjs",
+    "./dist/auto.browser.js",
+    "./dist/auto.browser.cjs",
     "./dist/register.js",
     "./dist/register.cjs"
   ],
@@ -33,12 +39,18 @@
     "type": "git",
     "url": "git+https://github.com/madhawaawishka/tokenmeter.git"
   },
-  "homepage": "https://github.com/madhawaawishka/tokenmeter#readme",
+  "homepage": "https://tokentab.netlify.app",
   "bugs": {
     "url": "https://github.com/madhawaawishka/tokenmeter/issues"
   },
   "exports": {
     ".": {
+      "browser": {
+        "types": "./dist/index.browser.d.ts",
+        "import": "./dist/index.browser.js",
+        "require": "./dist/index.browser.cjs",
+        "default": "./dist/index.browser.js"
+      },
       "import": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
@@ -49,6 +61,12 @@
       }
     },
     "./auto": {
+      "browser": {
+        "types": "./dist/auto.browser.d.ts",
+        "import": "./dist/auto.browser.js",
+        "require": "./dist/auto.browser.cjs",
+        "default": "./dist/auto.browser.js"
+      },
       "import": {
         "types": "./dist/auto.d.ts",
         "default": "./dist/auto.js"
@@ -66,6 +84,7 @@
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
+  "browser": "./dist/index.browser.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "tokentab": "dist/cli.js"
@@ -78,8 +97,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "node --import ./scripts/ts-resolve.mjs --test --experimental-sqlite --disable-warning=ExperimentalWarning \"test/**/*.test.ts\"",
-    "test:ci": "node --import ./scripts/ts-resolve.mjs --test --experimental-sqlite --disable-warning=ExperimentalWarning \"test/**/*.test.ts\"",
+    "test": "node --import ./scripts/ts-resolve.mjs --test --experimental-strip-types --experimental-sqlite --disable-warning=ExperimentalWarning \"test/**/*.test.ts\"",
+    "test:ci": "node --import ./scripts/ts-resolve.mjs --test --experimental-strip-types --experimental-sqlite --disable-warning=ExperimentalWarning \"test/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "format": "biome format --write .",

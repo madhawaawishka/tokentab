@@ -1,9 +1,10 @@
-import { createStore } from "./store/index.js";
+import { MemoryStore } from "./store/memory.js";
 import type { BudgetConfig, PricingTable, Store, TokenmeterConfig } from "./types.js";
 
 interface ResolvedConfig {
   storeOption: "sqlite" | "json" | "auto" | Store;
   dbPath?: string;
+  syncUrl?: string | false;
   pricingOverrides: PricingTable;
   budget?: BudgetConfig;
   redactPrompts: boolean;
@@ -13,11 +14,30 @@ interface ResolvedConfig {
 const DEFAULTS: ResolvedConfig = {
   storeOption: "auto",
   dbPath: undefined,
+  syncUrl: undefined,
   pricingOverrides: {},
   budget: undefined,
   redactPrompts: true,
   enabled: true,
 };
+
+/** Arguments handed to the store factory for the current environment. */
+export interface StoreRequest {
+  option: "sqlite" | "json" | "auto";
+  dbPath?: string;
+  syncUrl?: string | false;
+}
+
+// The default store backend differs per build: the Node entries install the
+// SQLite/JSON-file factory, the browser entries install the localStorage one.
+// config.ts itself must stay free of `node:` imports so it bundles anywhere;
+// the memory store is the universally safe fallback.
+let storeFactory: (req: StoreRequest) => Store = () => new MemoryStore();
+
+/** Install the environment's default store backend (called by entry modules). */
+export function setStoreFactory(factory: (req: StoreRequest) => Store): void {
+  storeFactory = factory;
+}
 
 interface GlobalState {
   config: ResolvedConfig;
@@ -51,6 +71,7 @@ export function configure(options: TokenmeterConfig = {}): void {
   const config = s.config;
   if (options.store !== undefined) config.storeOption = options.store;
   if (options.dbPath !== undefined) config.dbPath = options.dbPath;
+  if (options.syncUrl !== undefined) config.syncUrl = options.syncUrl;
   if (options.pricing !== undefined) {
     config.pricingOverrides = mergePricing(config.pricingOverrides, options.pricing);
   }
@@ -59,7 +80,7 @@ export function configure(options: TokenmeterConfig = {}): void {
   if (options.enabled !== undefined) config.enabled = options.enabled;
 
   // Store-affecting options changed: drop the cached instance.
-  if (options.store !== undefined || options.dbPath !== undefined) {
+  if (options.store !== undefined || options.dbPath !== undefined || options.syncUrl !== undefined) {
     if (s.storeInstance?.close) {
       try {
         void s.storeInstance.close();
@@ -108,11 +129,16 @@ export function getPricingOverrides(): PricingTable {
 /** Lazily create (and cache) the configured store. */
 export function getStore(): Store {
   const s = state();
-  if (s.config.storeOption && typeof s.config.storeOption === "object") {
-    return s.config.storeOption;
+  const option = s.config.storeOption;
+  if (option && typeof option === "object") {
+    return option;
   }
   if (!s.storeInstance) {
-    s.storeInstance = createStore(s.config.storeOption, s.config.dbPath);
+    s.storeInstance = storeFactory({
+      option,
+      dbPath: s.config.dbPath,
+      syncUrl: s.config.syncUrl,
+    });
   }
   return s.storeInstance;
 }
