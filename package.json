@@ -37,11 +37,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/madhawaawishka/tokenmeter.git"
+    "url": "git+https://github.com/madhawaawishka/tokentab.git"
   },
   "homepage": "https://tokentab.netlify.app",
   "bugs": {
-    "url": "https://github.com/madhawaawishka/tokenmeter/issues"
+    "url": "https://github.com/madhawaawishka/tokentab/issues"
   },
   "exports": {
     ".": {
