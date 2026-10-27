@@ -36,6 +36,12 @@ Every OpenAI, Anthropic and Gemini call — SDK or raw `fetch`, Node or browser 
 is now counted automatically. Your tokens, cost, latency and per-feature spend,
 charted in your browser, from data that **never leaves your machine**.
 
+<p align="center">
+  <a href="#interactive-local-dashboard">
+    <img src="assets/dashboard-overview.png" alt="tokentab local web dashboard overview" width="100%" />
+  </a>
+</p>
+
 ## Why tokentab?
 
 LLM bills are death by a thousand cuts: which *feature* is burning the money? Provider dashboards show totals per API key, not per feature — and shipping your usage data to a SaaS just to find out is overkill.

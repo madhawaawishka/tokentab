@@ -16,13 +16,219 @@ const fmtInt = (n) => (n ?? 0).toLocaleString("en-US");
 const fmtTime = (ts) => new Date(ts).toLocaleString();
 
 async function api(path, params = {}) {
+  const merged = { window: state.window, ...params };
+  if (MOCK) return mockApi(path, merged);
   const u = new URL(path, location.origin);
-  for (const [k, v] of Object.entries({ window: state.window, ...params })) {
+  for (const [k, v] of Object.entries(merged)) {
     u.searchParams.set(k, v);
   }
   const res = await fetch(u);
   if (!res.ok) throw new Error(`${path} -> ${res.status}`);
   return res.json();
+}
+
+// ---------- demo mock data (enable with ?mock=1) — for screenshots only ----------
+// Generates coherent fake data entirely in the browser; the real /api/* store
+// is never touched. Remove the query flag to return to live data.
+const MOCK = new URLSearchParams(location.search).has("mock");
+const DAY = 86_400_000;
+
+// Small deterministic PRNG so screenshots are stable between reloads.
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function utcDay(ts) {
+  const d = new Date(ts);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
+const MOCK_MODELS = [
+  { provider: "openai", model: "gpt-4o", inRate: 2.5, outRate: 10 },
+  { provider: "openai", model: "gpt-4o-mini", inRate: 0.15, outRate: 0.6 },
+  { provider: "anthropic", model: "claude-3-5-sonnet", inRate: 3, outRate: 15 },
+  { provider: "anthropic", model: "claude-3-5-haiku", inRate: 0.8, outRate: 4 },
+  { provider: "gemini", model: "gemini-1.5-pro", inRate: 1.25, outRate: 5 },
+  { provider: "gemini", model: "gemini-1.5-flash", inRate: 0.075, outRate: 0.3 },
+];
+const MOCK_TAGS = ["chat", "summarize", "extract", "classify", "embeddings", "rerank", "agent"];
+const MOCK_WINDOW_DAYS = { day: 1, week: 7, month: 30, total: 365 };
+
+// Stable pool of daily activity for the trailing year, with a weekly rhythm
+// and a gentle upward ramp so the heatmap and trend look alive.
+let _mockPool = null;
+function mockPool() {
+  if (_mockPool) return _mockPool;
+  const today = utcDay(Date.now());
+  const r = rng(1337);
+  const days = [];
+  for (let i = 364; i >= 0; i--) {
+    const bucket = today - i * DAY;
+    const dow = new Date(bucket).getUTCDay();
+    const weekend = dow === 0 || dow === 6;
+    const ramp = 0.35 + 0.65 * ((364 - i) / 364);
+    if (r() > (weekend ? 0.4 : 0.85) * ramp + 0.1) continue; // some quiet days
+    const base = weekend ? 60 : 220;
+    const calls = Math.round((base + r() * base) * ramp) + 1;
+    const inputTokens = calls * Math.round(700 + r() * 800);
+    const outputTokens = calls * Math.round(300 + r() * 450);
+    const totalTokens = inputTokens + outputTokens;
+    const totalCost = (inputTokens * 4 + outputTokens * 16) / 1e6; // premium-blended
+    days.push({ bucket, calls, totalTokens, inputTokens, outputTokens, totalCost });
+  }
+  _mockPool = days;
+  return days;
+}
+
+function mockPoolForWindow(window) {
+  const days = MOCK_WINDOW_DAYS[window] ?? 30;
+  const cutoff = utcDay(Date.now()) - (days - 1) * DAY;
+  return mockPool().filter((d) => d.bucket >= cutoff);
+}
+
+function mockSum(rows, key) {
+  return rows.reduce((s, d) => s + d[key], 0);
+}
+
+function mockOverview(window) {
+  const rows = mockPoolForWindow(window);
+  const calls = mockSum(rows, "calls");
+  const inputTokens = mockSum(rows, "inputTokens");
+  const outputTokens = mockSum(rows, "outputTokens");
+  const spent = mockSum(mockPoolForWindow("month"), "totalCost");
+  const limit = 750;
+  return {
+    window,
+    since: 0,
+    totalCost: mockSum(rows, "totalCost"),
+    totalTokens: inputTokens + outputTokens,
+    inputTokens,
+    outputTokens,
+    calls,
+    avgLatencyMs: 680 + (calls % 420),
+    estimatedShare: 0.12,
+    budget: { limit, window: "month", spent, ratio: spent / limit },
+  };
+}
+
+function mockTimeseries(window, gran) {
+  const rows = mockPoolForWindow(window);
+  const toBucket = (d) => ({
+    bucket: d.bucket,
+    totalCost: d.totalCost,
+    totalTokens: d.totalTokens,
+    inputTokens: d.inputTokens,
+    outputTokens: d.outputTokens,
+    estimatedTokens: Math.round(d.totalTokens * 0.12),
+    calls: d.calls,
+  });
+  if (gran === "day") return rows.map(toBucket);
+  const keyOf = (ts) => {
+    const dt = new Date(ts);
+    if (gran === "month") return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), 1);
+    const daysSinceMonday = (dt.getUTCDay() + 6) % 7;
+    return utcDay(ts) - daysSinceMonday * DAY;
+  };
+  const m = new Map();
+  for (const d of rows) {
+    const k = keyOf(d.bucket);
+    const b =
+      m.get(k) ??
+      { bucket: k, totalCost: 0, totalTokens: 0, inputTokens: 0, outputTokens: 0, estimatedTokens: 0, calls: 0 };
+    b.totalCost += d.totalCost;
+    b.totalTokens += d.totalTokens;
+    b.inputTokens += d.inputTokens;
+    b.outputTokens += d.outputTokens;
+    b.estimatedTokens += Math.round(d.totalTokens * 0.12);
+    b.calls += d.calls;
+    m.set(k, b);
+  }
+  return [...m.values()].sort((a, b) => a.bucket - b.bucket);
+}
+
+function mockBy(by, window) {
+  const rows = mockPoolForWindow(window);
+  const totalCost = mockSum(rows, "totalCost") || 1;
+  const totalTokens = mockSum(rows, "totalTokens") || 1;
+  const totalCalls = mockSum(rows, "calls") || 1;
+  const keys =
+    by === "model"
+      ? MOCK_MODELS.map((m) => m.model)
+      : by === "provider"
+        ? [...new Set(MOCK_MODELS.map((m) => m.provider))]
+        : MOCK_TAGS;
+  const r = rng(by === "model" ? 7 : by === "provider" ? 11 : 13);
+  const weights = keys.map(() => 0.2 + r());
+  const sum = weights.reduce((a, b) => a + b, 0);
+  return keys
+    .map((k, i) => {
+      const f = weights[i] / sum;
+      return {
+        key: k,
+        calls: Math.round(totalCalls * f),
+        inputTokens: Math.round(totalTokens * f * 0.65),
+        outputTokens: Math.round(totalTokens * f * 0.35),
+        totalTokens: Math.round(totalTokens * f),
+        totalCost: totalCost * f,
+        avgLatencyMs: Math.round(500 + r() * 1200),
+      };
+    })
+    .sort((a, b) => b.totalCost - a.totalCost);
+}
+
+function mockRecent(limit, offset) {
+  const r = rng(99 + offset);
+  const out = [];
+  for (let i = 0; i < limit; i++) {
+    const idx = offset + i;
+    const m = MOCK_MODELS[Math.floor(r() * MOCK_MODELS.length)];
+    const tag = MOCK_TAGS[Math.floor(r() * MOCK_TAGS.length)];
+    const inputTokens = Math.round(300 + r() * 3200);
+    const outputTokens = Math.round(120 + r() * 1600);
+    const inputCost = (inputTokens * m.inRate) / 1e6;
+    const outputCost = (outputTokens * m.outRate) / 1e6;
+    out.push({
+      id: "mock-" + idx,
+      timestamp: Date.now() - idx * (1_800_000 + Math.round(r() * 5_400_000)),
+      provider: m.provider,
+      model: m.model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      inputCost,
+      outputCost,
+      totalCost: inputCost + outputCost,
+      latencyMs: Math.round(280 + r() * 1900),
+      tag,
+      estimated: r() < 0.12,
+      pricingMissing: false,
+    });
+  }
+  return out;
+}
+
+function mockApi(path, p) {
+  const window = p.window ?? "month";
+  switch (path) {
+    case "/api/overview":
+      return mockOverview(window);
+    case "/api/timeseries":
+      return mockTimeseries(window, p.granularity ?? "day");
+    case "/api/activity":
+      return mockPool();
+    case "/api/recent":
+      return mockRecent(Number(p.limit) || 25, Number(p.offset) || 0);
+    case "/api/by":
+      return mockBy(p.by ?? "tag", window);
+    default:
+      return {};
+  }
 }
 
 function el(tag, attrs = {}, children = []) {
