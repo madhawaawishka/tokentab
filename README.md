@@ -35,6 +35,12 @@ npx tokentab dashboard
 
 Your tokens, cost, latency and per-feature spend — charted in your browser, from a database that **never leaves your machine**.
 
+<p align="center">
+  <a href="#interactive-local-dashboard">
+    <img src="assets/dashboard-overview.png" alt="tokentab local web dashboard overview" width="100%" />
+  </a>
+</p>
+
 ## Why tokentab?
 
 LLM bills are death by a thousand cuts: which *feature* is burning the money? Provider dashboards show totals per API key, not per feature — and shipping your usage data to a SaaS just to find out is overkill.
@@ -119,6 +125,47 @@ tag        calls  in       out     cost     avg ms
 summarize  214    700,120  41,200  $0.8112  640
 chat       98     140,902  55,210  $0.4728  1,210
 ```
+
+<a id="interactive-local-dashboard"></a>
+
+## 🖥️ Interactive Local Dashboard
+
+Run `npx tokentab dashboard` to spin up the local web dashboard at `http://127.0.0.1:3000`. It reads directly from your local store file (`.tokenmeter/usage.db`) — zero telemetry, no cloud accounts, and nothing ever sent over the wire.
+
+### 1. Overview, Spend Controls & Cost Trajectory
+Get an immediate high-level pulse on your spending and latency. Filter across **Day**, **Week**, **Month**, or **All** time with a single click.
+
+<p align="center">
+  <img src="assets/dashboard-metrics.png" alt="tokentab Dashboard - Overview KPIs, Budget Guard, and Cost Over Time" width="100%" />
+</p>
+
+- **Executive KPI Cards** — Total USD spend (e.g. `$79.43` across 6,493 calls), total tokens processed with input vs. output breakdown (`7.0M` in / `3.2M` out), average round-trip latency (`873 ms`), and percentage of calls using estimated token counts (`12%`).
+- **Visual Budget Guard** — Real-time progress bar tracking monthly spend against your defined budget ceiling (e.g., `$79.43 of $750.00 month budget used (11%)`).
+- **Cost Over Time Chart** — Luminous area timeseries chart with Day, Week, and Month granularity toggles to instantly detect usage anomalies, billing spikes, or runaway loops.
+
+---
+
+### 2. 3D Activity Heatmap & Token Usage Trends
+Understand your application's usage volume, daily rhythm, and token distribution over time.
+
+<p align="center">
+  <img src="assets/dashboard-heatmap.png" alt="tokentab Dashboard - 3D Activity Heatmap and Daily Token Usage Trend" width="100%" />
+</p>
+
+- **3D Isometric Activity Heatmap** — GitHub-style 365-day calendar visualizing call volume per day in an interactive 3D voxel landscape. Includes a 2D/3D view toggle and automatic local timezone detection (`UTC+05:30`).
+- **Token Volume Trends** — Daily stacked bar chart breaking down token consumption into **prompt / input tokens** (orange), **completion / output tokens** (cyan), and **locally estimated tokens** (pink for streaming requests where the provider omitted usage). Includes an expand button for full-width inspection.
+
+---
+
+### 3. Feature Spend Attribution & Real-Time Call Audit Log
+Eliminate LLM cost blind spots by answering the single most important question: **which feature is burning the money?**
+
+<p align="center">
+  <img src="assets/dashboard-breakdown.png" alt="tokentab Dashboard - Feature Spend Attribution and Recent Calls Table" width="100%" />
+</p>
+
+- **"Where the Money Goes" (Feature Spend)** — Tagged attribution (`chat`, `summarize`, `agent`, `extract`, `classify`, `embeddings`, `rerank`) with visual proportional spend bars and exact dollar totals. Pivot between **Tag**, **Model**, or **Provider** with a single click.
+- **Granular Recent Calls Table** — Real-time inspection log of every tracked LLM invocation. View exact timestamps, feature tags, model names (`gpt-4o-mini`, `gemini-1.5-pro`, `claude-3-5-sonnet`, `claude-3-5-haiku`), input/output token counts, dollar cost down to 4 decimal places, latency in milliseconds, and `est` badges for estimated counts. Includes pagination controls to audit historical requests.
 
 ## Automatic tracking (no client wrapping)
 
