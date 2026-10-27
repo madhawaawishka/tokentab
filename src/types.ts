@@ -107,6 +107,12 @@ export interface TokenmeterConfig {
   store?: "sqlite" | "json" | "auto" | Store;
   /** Path to the store file. Default "./.tokenmeter/usage.db" (or .jsonl). */
   dbPath?: string;
+  /**
+   * Browser builds only: base URL of a running `tokentab dashboard` to mirror
+   * records to (default http://127.0.0.1:4242 while the page is served from
+   * localhost; off otherwise). Set `false` to disable mirroring entirely.
+   */
+  syncUrl?: string | false;
   /** Pricing overrides merged over the bundled table. */
   pricing?: PricingTable;
   budget?: BudgetConfig;

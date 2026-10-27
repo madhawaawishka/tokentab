@@ -1,3 +1,8 @@
+// Install the Node (SQLite / JSON-file) store backend for this entry.
+import { installNodeStoreFactory } from "./store/install-node.js";
+
+installNodeStoreFactory();
+
 export { withTracking } from "./tracker.js";
 export {
   enableAutoTracking,
@@ -15,6 +20,16 @@ export { cost, findPrice, getPricingTable } from "./pricing/index.js";
 export { estimate } from "./tokenize.js";
 export { checkBudget, windowStart } from "./budget.js";
 export { BudgetExceededError, AdapterNotFoundError } from "./errors.js";
+export {
+  overview,
+  breakdown,
+  costOverTime,
+  dailyActivity,
+  recentCalls,
+  toCsv,
+  toJson,
+} from "./report.js";
+export type { Overview, TimeBucket, DayActivity } from "./report.js";
 
 export type { Adapter, ExtractedUsage, StreamAccumulator } from "./adapters/index.js";
 export type {

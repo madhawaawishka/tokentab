@@ -171,7 +171,8 @@ function recordJson(
  * Anthropic, Gemini — and anything routed through their SDKs, which use global
  * fetch under the hood) are measured automatically, with no client wrapping.
  *
- * Idempotent. Server-side only — requires Node's filesystem for the store.
+ * Idempotent. Works in Node and in the browser (where records go to the
+ * localStorage store).
  */
 export function enableAutoTracking(options: AutoTrackingOptions = {}): void {
   const slot = patchSlot();
@@ -195,7 +196,9 @@ export function enableAutoTracking(options: AutoTrackingOptions = {}): void {
   const patched: Fetch = async (input, init) => {
     const url = urlOf(input);
     const started = Date.now();
-    const res = await stateForCall.original(input as RequestInfo, init);
+    // Call with globalThis as the receiver: invoking native fetch with any
+    // other `this` throws "Illegal invocation" in browsers.
+    const res = await stateForCall.original.call(globalThis, input as RequestInfo, init);
     try {
       if (!isEnabled() || !res.ok) return res;
       const provider = providerFor(url, stateForCall.hosts);
